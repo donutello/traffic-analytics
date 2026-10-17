@@ -59,7 +59,7 @@ uv run python -m contract.validate            # check every set in analysis/outp
 
 ## Checks
 
-Run them before you open a pull request:
+Run them before you open a pull request. GitHub Actions runs the same checks on every pull request, and a pull request can be merged only when they pass.
 
 ```sh
 uv run ruff check                             # Python lint
