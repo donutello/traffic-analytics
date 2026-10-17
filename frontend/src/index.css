@@ -1,0 +1,35 @@
+:root {
+  /* Colors for the three data states (FR2), shared by every chart and the map. */
+  --color-normal: #3b82f6;
+  --color-anomaly: #dc2626;
+  --color-imputed: #9ca3af;
+
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-bg: #ffffff;
+  --color-border: #e5e7eb;
+
+  font-family: system-ui, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #f3f4f6;
+    --color-muted: #9ca3af;
+    --color-bg: #111827;
+    --color-border: #374151;
+  }
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 1920px;
+  min-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}

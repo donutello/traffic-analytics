@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# The database is rebuilt from analysis/output/ by the import command.
+*.db
+*.db-*
+
+# Customer's raw data: never in git, the repo is public.
+analysis/data/raw/*
+!analysis/data/raw/.gitkeep
+
+# Local settings and secrets
+.env
+
+# Editors
+.idea/
+.vscode/
+.DS_Store

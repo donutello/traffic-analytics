@@ -1,0 +1,2 @@
+# Same line endings on Windows and Linux, so diffs of CSV and JSON stay clean.
+* text=auto eol=lf

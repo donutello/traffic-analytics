@@ -1,0 +1,35 @@
+[project]
+name = "traffic-analytics"
+version = "0.1.0"
+description = "Dashboard of traffic volume anomalies: FastAPI backend, data contract and analysis modules"
+license = "MIT"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "fastapi>=0.143",
+    "uvicorn>=0.54",
+    "pydantic>=2.14",
+    "numpy>=2.5",
+    "pandas>=3.0",
+    "openpyxl>=3.1",
+    "libsql>=0.1.11",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.13.1",
+    "pytest>=9.1",
+    "ruff>=0.17",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["frontend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend", "contract", "analysis"]
