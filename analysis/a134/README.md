@@ -10,3 +10,12 @@ uv run python -m contract.validate analysis/output/a134     # check the result
 ```
 
 The method, its thresholds and why they are what they are will be described here as the work goes on (see the issues with the road's label).
+
+## Detection Methods
+
+- **Heuristics**: Adaptive thresholds, seasonality, Russian holidays, trend detection
+- **ML Prophet**: Time series forecasting with confidence intervals
+- **ML Isolation Forest**: Multivariate anomaly detection
+- **Consensus**: Cross-validation between methods
+
+The module uses a hybrid approach combining rule-based and ML methods for robust anomaly detection.

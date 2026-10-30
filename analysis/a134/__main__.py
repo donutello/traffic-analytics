@@ -1,6 +1,4 @@
-"""Road module a134: read analysis/data/raw/a134/, write analysis/output/a134/.
+from .ml_analyzer import main
 
-Run it with: uv run python -m analysis.a134
-"""
-
-print("analysis.a134: nothing here yet, see the module README")
+if __name__ == "__main__":
+    main()
