@@ -10,6 +10,9 @@ An ADR is a short note about a decision that affects the whole team: what we cho
 | [0004](0004-data-flow-through-files.md) | Road modules hand data to the backend as files | accepted |
 | [0005](0005-database-turso.md) | Database: Turso (libSQL) | accepted |
 | [0006](0006-data-contract-as-pydantic-models.md) | Data contract as Pydantic models | accepted |
+| [0007](0007-frontend-api-shapes-from-day-one.md) | The frontend is built against the API response shapes from day one | accepted |
+| [0008](0008-chart-echarts-map-leaflet.md) | Chart: ECharts. Map: Leaflet | accepted |
+| [0007](0007-chart-echarts-map-leaflet.md) | Chart: ECharts. Map: Leaflet | accepted |
 
 ## How to add one
 

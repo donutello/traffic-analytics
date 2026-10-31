@@ -1,35 +1,468 @@
-:root {
-  /* Colors for the three data states (FR2), shared by every chart and the map. */
-  --color-normal: #3b82f6;
+/* Design tokens. The three data-state colors (FR2) are shared by the chart, the map and the lists. */
+:root,
+[data-theme='light'] {
+  --color-normal: #2563eb;
   --color-anomaly: #dc2626;
-  --color-imputed: #9ca3af;
+  --color-imputed: #94a3b8;
 
   --color-text: #111827;
-  --color-muted: #6b7280;
-  --color-bg: #ffffff;
-  --color-border: #e5e7eb;
+  --color-muted: #64748b;
+  --color-bg: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
 
+  --lv-low: #d97706;
+  --lv-medium: #ea580c;
+  --lv-high: #dc2626;
+  --lv-critical: #7f1d1d;
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --color-normal: #60a5fa;
+  --color-anomaly: #f87171;
+  --color-imputed: #64748b;
+
+  --color-text: #e5e7eb;
+  --color-muted: #94a3b8;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+
+  --lv-low: #fbbf24;
+  --lv-medium: #fb923c;
+  --lv-high: #f87171;
+  --lv-critical: #fca5a5;
+
+  color-scheme: dark;
+}
+
+:root {
   font-family: system-ui, sans-serif;
   color: var(--color-text);
   background: var(--color-bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-text: #f3f4f6;
-    --color-muted: #9ca3af;
-    --color-bg: #111827;
-    --color-border: #374151;
-  }
 }
 
 body {
   margin: 0;
 }
 
-main {
+button,
+select,
+input {
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--color-normal);
+}
+
+code {
+  font-size: 0.85em;
+}
+
+/* Layout: NFR1 asks for 1200–1920px desktop widths. The track is 1140px so that a window at
+   exactly 1200px still fits cleanly with its scrollbar; below that the whole page scrolls sideways. */
+.app {
   max-width: 1920px;
-  min-width: 1200px;
+  min-width: 1140px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 20px 28px 40px;
+  display: grid;
+  gap: 16px;
+}
+
+.boot {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.top h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.top p {
+  margin: 2px 0 0;
+}
+
+.top .period {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.top .period input {
+  margin-left: 6px;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabs button {
+  border: none;
+  border-radius: 8px 8px 0 0;
+  background: none;
+  padding: 10px 16px;
+}
+
+.tabs button[aria-pressed='true'] {
+  background: var(--color-surface);
+  box-shadow: inset 0 -2px 0 var(--color-normal);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.board {
+  display: grid;
+  gap: 16px;
+  grid-template: auto 1fr / minmax(0, 1fr) 360px;
+}
+
+.filters {
+  grid-column: 1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 16px;
+}
+
+.seg {
+  display: flex;
+  gap: 6px;
+}
+
+.seg button[aria-pressed='true'] {
+  border-color: var(--color-normal);
+  color: var(--color-normal);
+}
+
+.chart-card {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.chart-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.chart-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.side {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  overflow: auto;
+}
+
+.counts {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.anomaly-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.anomaly {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+}
+
+.anomaly .a-main {
+  display: grid;
+  gap: 2px;
+}
+
+.anomaly .a-main span {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.anomaly .a-meta {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-muted);
+}
+
+.lv-low {
+  color: var(--lv-low);
+}
+.lv-medium {
+  color: var(--lv-medium);
+}
+.lv-high {
+  color: var(--lv-high);
+}
+.lv-critical {
+  color: var(--lv-critical);
+}
+
+.dot.lv-low {
+  background: var(--lv-low);
+}
+.dot.lv-medium {
+  background: var(--lv-medium);
+}
+.dot.lv-high {
+  background: var(--lv-high);
+}
+.dot.lv-critical {
+  background: var(--lv-critical);
+}
+
+.mega {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-surface);
+  background: var(--color-anomaly);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+
+.map-link {
+  display: inline-block;
+  margin-top: 12px;
+  border: none;
+  background: none;
+  color: var(--color-normal);
+  padding: 0;
+}
+
+/* Map. NFR10 offline fallback: tiles stay uncovered on load, so hide the failed
+   tiles and keep a schematic background instead of Leaflet's grey gaps. */
+.map-row {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+}
+
+.map-wrap {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.map {
+  height: 560px;
+}
+
+.leaflet-container {
+  background: var(--color-bg);
+  font: inherit;
+}
+
+.map-wrap.offline .leaflet-tile {
+  visibility: hidden;
+}
+
+.map-wrap.offline .map {
+  background: repeating-linear-gradient(45deg, var(--color-bg), var(--color-bg) 18px, var(--color-surface) 18px, var(--color-surface) 36px);
+}
+
+[data-theme='dark'] .leaflet-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
+
+.map-note {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 500;
+  margin: 0;
+  font-size: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+.mini-box {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 600;
+  width: 190px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mini {
+  height: 130px;
+}
+
+.mini-box span {
+  display: block;
+  font-size: 11px;
+  padding: 2px 8px;
+  color: var(--color-muted);
+}
+
+.panel {
+  overflow: auto;
+}
+
+.hint {
+  color: var(--color-muted);
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: minmax(0, 720px);
+}
+
+.compare p {
+  margin: 8px 0;
+}
+
+/* Anomaly detail overlay. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(0 0 0 / 45%);
+  display: grid;
+  place-items: center;
+}
+
+.detail {
+  width: min(680px, calc(100vw - 80px));
+  max-height: calc(100vh - 80px);
+  overflow: auto;
+}
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.detail-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 18px;
+}
+
+.detail .dot {
+  background: currentcolor;
+}
+
+.kv {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.kv th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--color-muted);
+  padding: 4px 16px 4px 0;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.kv td {
+  padding: 4px 0;
+}
+
+.desc {
+  border-left: 3px solid var(--color-anomaly);
+  padding: 4px 12px;
+  margin: 12px 0;
+}
+
+.event {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 12px;
+}
+
+.event h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.event p {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+details {
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+details pre {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px;
+  overflow: auto;
+  font-size: 12px;
 }
