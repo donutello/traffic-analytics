@@ -1,0 +1,49 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     39.1061,
+     51.7423
+    ]
+   },
+   "properties": {
+    "id": "_example-km12",
+    "name": "км 12+300",
+    "road": "_example",
+    "km": 12.3,
+    "anomaly_count": 3,
+    "is_mega": true,
+    "directions": {
+     "direct": "в сторону города",
+     "reverse": "из города"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     39.3374,
+     51.4512
+    ]
+   },
+   "properties": {
+    "id": "_example-km47",
+    "name": "км 47+850",
+    "road": "_example",
+    "km": 47.85,
+    "anomaly_count": 3,
+    "is_mega": false,
+    "directions": {
+     "direct": "в сторону города",
+     "reverse": "из города"
+    }
+   }
+  }
+ ]
+}
