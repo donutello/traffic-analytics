@@ -20,6 +20,8 @@ from backend.common.periods import (
 # Russian text the dashboard shows. Codes stay English (docs/contract.md, "General rules").
 LEVEL_LABELS = {"low": "низкий", "medium": "средний", "high": "высокий", "critical": "критический"}
 CATEGORY_LABELS = {"traffic": "транспортная", "technical": "техническая"}
+# The roads keep adding detector types (contract "Code" is open); backend/test_labels.py fails
+# when a committed analysis/output/*/anomalies*.json emits a code this map does not know.
 ANOMALY_TYPE_LABELS = {
     "volume_drop": "падение потока",
     "volume_spike": "всплеск потока",
@@ -29,6 +31,12 @@ ANOMALY_TYPE_LABELS = {
     "congestion": "пробка",
     "flatline": "зависание датчика",
     "missing_hours": "пропуски данных",
+    "profile_shift": "нетипичный суточный профиль",
+    "balance_drift": "расхождение учёта",
+    "zero_telemetry": "датчик не передаёт данные",
+    "zero_speed": "отказ датчика скорости",
+    "direction_imbalance": "перекос направлений",
+    "level_of_service_shift": "сдвиг уровня сервиса",
 }
 EVENT_CATEGORY_LABELS = {
     "accident": "ДТП",

@@ -6,6 +6,13 @@ export const STATE_LABELS: Record<State, string> = { normal: 'норма', anoma
 export const GRANULARITY_LABELS: Record<Granularity, string> = { hour: 'час', day: 'день', week: 'неделя' }
 export const LEVEL_CLASSES: Record<Level, string> = { low: 'lv-low', medium: 'lv-medium', high: 'lv-high', critical: 'lv-critical' }
 
+/* The labels below cover only the closed contract Literals (level, source), so the filter
+   toolbar can draw itself before any data arrived. Anomaly types are open codes: their
+   Russian labels always come from the API (type_label), never from a map copied to here. */
+export const LEVEL_LABELS: Record<Level, string> = { low: 'низкий', medium: 'средний', high: 'высокий', critical: 'критический' }
+export const LEVEL_ORDER: Record<Level, number> = { low: 1, medium: 2, high: 3, critical: 4 }
+export const SOURCE_FILTER_LABELS: Record<'all' | 'ours' | 'corporate', string> = { all: 'все', ours: 'наш алгоритм', corporate: 'корпоративная система' }
+
 /** Zoom ladder (issue #11, FR1): start at weeks, brush-select steps to days, then to hours. */
 export const ZOOM_ORDER: Granularity[] = ['week', 'day', 'hour']
 
@@ -42,6 +49,9 @@ export interface Series { points: Point[] }
 export interface SensorProps { id: string; name: string; road: string; km: number; anomaly_count: number; is_mega: boolean; directions: { direct: string; reverse: string } }
 export interface SensorFeature { type: 'Feature'; geometry: { type: 'Point'; coordinates: [number, number] }; properties: SensorProps }
 export type SensorMap = { type: 'FeatureCollection'; features: SensorFeature[] }
+
+/** What the map draws per sensor, counted client-side over the window with the toolbar filters applied (issue #12). */
+export interface SensorHeat { count: number; level: Level | null }
 
 export interface AnomalyItem {
   id: string
