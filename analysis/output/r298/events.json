@@ -1,0 +1,154 @@
+[
+  {
+    "id": "r298-holiday-20260101",
+    "date": "2026-01-01",
+    "category": "holiday",
+    "title": "Новогодние каникулы",
+    "description": "Официальные нерабочие дни с 1 по 9 января 2026 (переносы по постановлению Правительства РФ №1466). Первый день года на междугородней трассе всегда самый тихий.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2026/"
+  },
+  {
+    "id": "r298-holiday-20260223",
+    "date": "2026-02-23",
+    "category": "holiday",
+    "title": "День защитника Отечества",
+    "description": "Выходный понедельник, длинные выходные 21-23 февраля.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2026/"
+  },
+  {
+    "id": "r298-holiday-20260309",
+    "date": "2026-03-09",
+    "category": "holiday",
+    "title": "Перенесённый выходной после 8 Марта",
+    "description": "Понедельник 9 марта - нерабочий день переноса, длинные выходные 7-9 марта.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2026/"
+  },
+  {
+    "id": "r298-holiday-20260501",
+    "date": "2026-05-01",
+    "category": "holiday",
+    "title": "Праздник Весны и Труда",
+    "description": "Нерабочий четверг, начало майских выходных; в этот же день столкнулись две фуры на боковой трассе у Панино (см. отдельное событие).",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2026/"
+  },
+  {
+    "id": "r298-holiday-20260509",
+    "date": "2026-05-09",
+    "category": "holiday",
+    "title": "День Победы",
+    "description": "Нерабочее воскресенье 10 мая и добавленный понедельник 11 мая - перенесённые дни по календарю 2026 года; вечер накануне ожидается повышенный поток.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2026/"
+  },
+  {
+    "id": "r298-holiday-20260612",
+    "date": "2026-06-12",
+    "category": "holiday",
+    "title": "День России",
+    "description": "Нерабочая пятница; накануне, 11 июня, традиционного повышенного оттока машин из Воронежа.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2026/"
+  },
+  {
+    "id": "r298-weather-20260102",
+    "date": "2026-01-02",
+    "category": "weather",
+    "title": "Жёлтый уровень: порывы ветра 15-17 м/с, налипание мокрого снега",
+    "description": "Гидрометцентр: 2 января ветер до 17 м/с, с вечера 2-го и до утра 3-го налипание мокрого снега, 3 января мокрый снег с дождём по области.",
+    "source_url": "https://gorcom36.ru/content/opasnye-pogodnye-yavleniya-nakroyut-v-pervye-dni-novogo-goda-voronezhskuyu-oblast/"
+  },
+  {
+    "id": "r298-weather-20260108",
+    "date": "2026-01-08",
+    "category": "weather",
+    "title": "Снегопад на федеральных трассах области",
+    "description": "В четверг 8 января ГИБДД и метео служба предупреждали водителей о снегопаде и плохой видимости на федеральных дорогах Воронежской области.",
+    "source_url": "https://voronezhnews.ru/fn_1782516.html"
+  },
+  {
+    "id": "r298-weather-20260124",
+    "date": "2026-01-24",
+    "category": "weather",
+    "title": "Штормовое предупреждение: аномальные морозы 24-27 января",
+    "description": "Восток Воронежской области (включая наш коридор) на 7-13 градусов ниже климатической нормы; МЧС призывает водителей к осторожности на дорогах.",
+    "source_url": "https://novostivoronezha.ru/2026-01-24/341286"
+  },
+  {
+    "id": "r298-weather-20260201",
+    "date": "2026-02-01",
+    "category": "weather",
+    "title": "Аномальные морозы до -29 градусов",
+    "description": "1 февраля температура в области упала до -20, по прогнозам в ближайшие сутки до -29.",
+    "source_url": "https://vk.ru/wall-33041211_6788091"
+  },
+  {
+    "id": "r298-weather-20260411",
+    "date": "2026-04-11",
+    "category": "weather",
+    "title": "Мокрый снег и дождь на трассах",
+    "description": "Автодор утром предупредил водителей о мокром снеге на федеральных трассах области; днём и вечером дождь.",
+    "source_url": "https://vestivrn.ru/news/2026-04-11/voditelei-prizvali-byt-ostorozhnee-iz-za-snegopada-na-voronezhskoi-trasse/"
+  },
+  {
+    "id": "r298-weather-20260524",
+    "date": "2026-05-24",
+    "category": "weather",
+    "title": "Жёлтый уровень продлён: гроза, град, ветер до 17 м/с",
+    "description": "Предупреждение действовало до 18:00 воскресенья 24 мая, грозы - до утра 25 мая.",
+    "source_url": "https://gorcom36.ru/content/pogodnuyu-opasnost-prodlili-na-24-maya-v-voronezhskoy-oblasti/"
+  },
+  {
+    "id": "r298-weather-20260620",
+    "date": "2026-06-20",
+    "category": "weather",
+    "title": "Грозы и кратковременные дожди в выходные",
+    "description": "20 и 21 июня днём по городу и области - кратковременные дожди, гроза.",
+    "source_url": "https://www.gorcom36.ru/content/grozy-i-dozhdi-vernutsya-v-voronezh-v-vykhodnye-dni/"
+  },
+  {
+    "id": "r298-weather-20260702",
+    "date": "2026-07-02",
+    "category": "weather",
+    "title": "Штормовое предупреждение: жара до 35 градусов",
+    "description": "Опасное метеорологическое явление - сильная жара - ожидалась 2, 3 и 4 июля по всей области.",
+    "source_url": "https://gorcom36.ru/content/iz-za-zhestokoy-zhary-v-voronezhskoy-oblasti-obyavili-trekhdnevnoe-shtormovoe-preduprezhdenie/"
+  },
+  {
+    "id": "r298-accident-20260222",
+    "date": "2026-02-22",
+    "category": "accident",
+    "title": "Смертельное ДТП на км 394: легковушка и фура",
+    "description": "В воскресенье 22 февраля на 394-м км трассы Р-298 в Грибановском районе столкнулись легковой автомобиль и фура; четверо погибших.",
+    "source_url": "https://vestivrn.ru/news/2026-02-22/chetyre-cheloveka-pogibli-v-stolknovenii-legkovushki-i-fury-na-voronezhskoi-trasse/"
+  },
+  {
+    "id": "r298-accident-20260501",
+    "date": "2026-05-01",
+    "category": "accident",
+    "title": "Столкнулись две фуры на трассе у Панино",
+    "description": "Утром 1 мая на автодороге Курск-Борисоглебск-Панино-Эртиль (примыкает к Р-298 у Панино) фура врезалась в ехавший впереди КамАЗ, водитель FAW погиб.",
+    "source_url": "https://bloknot-voronezh.ru/news/opublikovano-foto-posledstviy-smertelnogo-dtp-dvukh-1970875"
+  },
+  {
+    "id": "r298-accident-20260503",
+    "date": "2026-05-03",
+    "category": "accident",
+    "title": "Смертельное ДТП на км 351 в Аннинском районе",
+    "description": "В воскресенье 3 мая в 20:30 на 351-м км трассы Р-298 погиб человек; подробности МВД опубликованы на следующий день.",
+    "source_url": "https://obozvrn.ru/archives/347863"
+  },
+  {
+    "id": "r298-roadworks-20260126",
+    "date": "2026-01-26",
+    "category": "roadworks",
+    "title": "Р-298 расширили до четырёх полос (км 196-209)",
+    "description": "Работы по нацпроекту «Инфраструктура для жизни» на этом западном участке завершены к 26 января; на самой трассе распределение потоков после зимних ограничений менялось.",
+    "source_url": "https://vestivrn.ru/news/2026-01-26/v-voronezhskoi-oblasti-rasshirili-federalnuyu-trassu-r-298-do-chetyryokh-polos/"
+  },
+  {
+    "id": "r298-roadworks-20260910",
+    "date": "2026-09-10",
+    "category": "roadworks",
+    "title": "Реверсивное движение на мосту через реку Девица",
+    "description": "С 14:00 10 сентября до 17:00 24 сентября на 163-м км Р-298 (западнее нашего участка) ремонт покрытия моста с реверсом - на коридоре в целом возможны перераспределения потока.",
+    "source_url": "https://vestivrn.ru/news/2026-09-09/na-trasse-kursk-voronezh-vremennogo-ogranichat-dvizhenie/"
+  }
+]
