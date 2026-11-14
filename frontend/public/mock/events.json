@@ -1,0 +1,32 @@
+[
+ {
+  "id": "_example-crash-0308",
+  "date": "2025-03-08",
+  "date_label": "8 марта",
+  "category": "accident",
+  "category_label": "ДТП",
+  "title": "ДТП с грузовиком, движение перекрыто",
+  "description": "Вымышленное событие для примера: столкновение фуры и легкового автомобиля, перекрытие на 5 часов.",
+  "source_url": "https://example.com/news/crash-0308"
+ },
+ {
+  "id": "_example-outage-0307",
+  "date": "2025-03-07",
+  "date_label": "7 марта",
+  "category": "outage",
+  "category_label": "отключение",
+  "title": "Отключение электричества на датчике",
+  "description": "Вымышленное событие для примера: плановые работы на подстанции.",
+  "source_url": "https://example.com/news/outage-0307"
+ },
+ {
+  "id": "_example-holiday-0308",
+  "date": "2025-03-08",
+  "date_label": "8 марта",
+  "category": "holiday",
+  "category_label": "праздник",
+  "title": "Международный женский день",
+  "description": null,
+  "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/"
+ }
+]

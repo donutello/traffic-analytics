@@ -67,7 +67,7 @@
     "expected": 85.0,
     "deviation_pct": -62.9,
     "score": 4.5,
-    "is_mega": false,
+    "is_mega": true,
     "event_id": null,
     "description": "Скорость в прямом направлении упала до 31,5 км/ч"
   }

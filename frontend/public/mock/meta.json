@@ -1,0 +1,14 @@
+{
+ "roads": [
+  {
+   "code": "_example",
+   "name": "Пример участка (вымышленные данные)",
+   "sensors": 2
+  }
+ ],
+ "period": {
+  "from": "2025-03-07",
+  "to": "2025-03-09"
+ },
+ "generated_from": "analysis/output/_example"
+}

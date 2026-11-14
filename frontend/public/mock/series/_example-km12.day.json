@@ -1,0 +1,22 @@
+{
+ "points": [
+  {
+   "ts": "2025-03-07",
+   "label": "7 марта",
+   "volume": 731,
+   "state": "normal"
+  },
+  {
+   "ts": "2025-03-08",
+   "label": "8 марта",
+   "volume": 424,
+   "state": "anomaly"
+  },
+  {
+   "ts": "2025-03-09",
+   "label": "9 марта",
+   "volume": 533,
+   "state": "anomaly"
+  }
+ ]
+}
