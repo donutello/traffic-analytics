@@ -57,6 +57,15 @@ uv run python -m analysis.a134                # run the module
 uv run python -m contract.validate            # check every set in analysis/output/
 ```
 
+Load the modules' results into the database (the dashboard only reads the database):
+
+```sh
+uv run python -m backend.load                 # every valid set in analysis/output/
+uv run python -m backend.load _example        # or just one road; _example works before real results exist
+```
+
+Loading a road replaces its old rows, so running it again changes nothing; a road whose files break the contract is reported and loads nothing.
+
 ## Checks
 
 Run them before you open a pull request. GitHub Actions runs the same checks on every pull request, and a pull request can be merged only when they pass.
