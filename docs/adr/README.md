@@ -13,6 +13,7 @@ An ADR is a short note about a decision that affects the whole team: what we cho
 | [0007](0007-frontend-api-shapes-from-day-one.md) | The frontend is built against the API response shapes from day one | accepted |
 | [0008](0008-chart-echarts-map-leaflet.md) | Chart: ECharts. Map: Leaflet | accepted |
 | [0007](0007-chart-echarts-map-leaflet.md) | Chart: ECharts. Map: Leaflet | accepted |
+| [0009](0009-backend-layered-architecture.md) | Backend: one package per feature, controller / service / repository inside | accepted |
 
 ## How to add one
 

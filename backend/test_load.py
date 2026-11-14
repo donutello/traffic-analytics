@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from backend import load
 from backend.db import connect, ensure_schema
+from backend.importer import services as load
 from contract.validate import OUTPUT, read_road
 
 EXAMPLE = OUTPUT / "_example"
