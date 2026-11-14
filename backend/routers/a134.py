@@ -3,15 +3,15 @@
 from typing import Annotated
 
 import libsql
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from backend.db import get_db
 from backend.services.a134_service import (
     get_a134_anomalies,
     get_a134_anomaly,
     get_a134_sensor,
-    get_a134_series,
     get_a134_sensors,
+    get_a134_series,
 )
 from contract.models import Anomaly, Sensor, SeriesRow
 

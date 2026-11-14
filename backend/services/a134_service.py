@@ -3,12 +3,13 @@
 import libsql
 from fastapi import HTTPException
 
+from backend.repositories.anomaly_repository import get_anomalies, get_anomaly_by_id
 from backend.repositories.sensor_repository import (
     get_sensor_by_id,
     get_sensors_by_road,
-)
-from contract.models import Sensor
-
+   )
+from backend.repositories.series_repository import get_series
+from contract.models import Anomaly, Sensor, SeriesRow
 
 def get_a134_sensors(db: libsql.Connection) -> list[Sensor]:
     """Возвращает список датчиков трассы А-134 в виде Pydantic-моделей."""
@@ -48,11 +49,6 @@ def get_a134_sensor(db: libsql.Connection, sensor_id: str) -> Sensor:
             "reverse": data["directions_reverse"],
         },
     )
-
-
-from backend.repositories.series_repository import get_series
-from backend.repositories.anomaly_repository import get_anomalies, get_anomaly_by_id
-from contract.models import SeriesRow, Anomaly
 
 
 def get_a134_series(
