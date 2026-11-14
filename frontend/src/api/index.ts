@@ -11,7 +11,7 @@ export const urls = {
   meta: () => '/api/meta',
   sensors: (road: string, from: string, to: string) => `/api/sensors?road=${road}&from=${from}&to=${to}`,
   series: (sensor: string, from: string, to: string, granularity: string) => `/api/series?sensor=${sensor}&from=${from}&to=${to}&granularity=${granularity}`,
-  anomalies: (sensor: string, from: string, to: string) => `/api/anomalies?sensor=${sensor}&from=${from}&to=${to}`,
+  anomalies: (road: string, from: string, to: string) => `/api/anomalies?road=${road}&from=${from}&to=${to}`,
   anomaly: (id: string) => `/api/anomalies/${id}`,
 }
 

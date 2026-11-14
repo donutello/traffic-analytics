@@ -12,6 +12,7 @@ import {
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useEffect, useRef } from 'react'
+import { cssVar } from './cssVar'
 import { STATE_LABELS, type AnomalyItem, type Granularity, type Point, type State } from './types'
 
 /* Only what this chart uses (docs/adr/0008), so the bundle stays sane. */
@@ -29,10 +30,6 @@ const DATE_FMT = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long
 const DATETIME_FMT = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' })
 const SHORT_DATE_FMT = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', timeZone: 'Europe/Moscow' })
 const NUM = new Intl.NumberFormat('ru-RU')
-
-function cssVar(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-}
 
 /** cssVar() returns a '#rrggbb' token; markArea shading needs a translucent form. */
 function rgba(hex: string, alpha: number): string {
@@ -80,7 +77,7 @@ interface Props {
   name: string
   /** The user brush-selected a window: the ts values (week/day are dates, hour is ISO time) of both ends. */
   onZoom: (fromTs: string, toTs: string) => void
-  /** The user clicked an anomaly marker or band; the id goes to the detail (full panel comes in #12). */
+  /** The user clicked an anomaly marker or band; the id opens the side panel (issue #12). */
   onAnomalyClick: (id: string) => void
 }
 

@@ -1,17 +1,18 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import AnomalyList, { CountChips } from './AnomalyList'
 import { get, urls } from './api'
 import Chart from './Chart'
-import DetailPanel from './Detail'
+import MapSection, { MapStates } from './MapSection'
 import Placeholder from './Placeholder'
+import SidePanel from './SidePanel'
 import { EmptyState, ErrorState, Spinner } from './States'
+import Toolbar from './Toolbar'
 import { THEME_KEY, applyTheme, type Theme } from './theme'
+import { useUrlState } from './urlState'
 import { useAsync } from './useAsync'
-import { GRANULARITY_LABELS, longDate, ZOOM_ORDER, type AnomalyItem, type Granularity, type Meta, type Point, type SensorAnomalies, type SensorMap, type Series, type TimeWindow } from './types'
+import { LEVEL_ORDER, longDate, ZOOM_ORDER, type Meta, type Point, type SensorAnomalies, type SensorHeat, type SensorMap, type Series } from './types'
 
-type Tab = 'overview' | 'map' | 'compare'
-
-const TABS: { id: Tab; label: string }[] = [
+const TABS: { id: 'overview' | 'map' | 'compare'; label: string }[] = [
   { id: 'overview', label: 'Обзор' },
   { id: 'map', label: 'Карта' },
   { id: 'compare', label: 'Сравнение алгоритмов' },
@@ -19,33 +20,63 @@ const TABS: { id: Tab; label: string }[] = [
 
 const NONE: Promise<null> = Promise.resolve(null)
 const NO_POINTS: Point[] = []
-const NO_ANOMALIES: AnomalyItem[] = []
 
 /** Code of the fictional sample road in /api/meta; every other road is real project data. Names are still taken from the API, never from here. */
 const SAMPLE_ROAD = '_example'
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'))
-  const [tab, setTab] = useState<Tab>('overview')
-  const [road, setRoad] = useState('')
-  const [sensorPick, setSensorPick] = useState<string | null>(null)
-  const [level, setLevel] = useState<Granularity>('week')
-  const [view, setView] = useState<TimeWindow | null>(null)
-  const [detailId, setDetailId] = useState<string | null>(null)
+  // One shared view state for every section (issue #14): the URL is its single source.
+  const [url, patch] = useUrlState()
 
   const meta = useAsync(get<Meta>(urls.meta()), [])
   const roads = meta.data?.roads ?? []
   // Default the first real road: the sample is fictional and would mislead on first open.
-  const roadCode = road || (roads.find((r) => r.code !== SAMPLE_ROAD) ?? roads[0])?.code || ''
+  const road = url.road || (roads.find((r) => r.code !== SAMPLE_ROAD) ?? roads[0])?.code || ''
   const period = meta.data?.period
-  const sensors = useAsync(meta.data ? get<SensorMap>(urls.sensors(roadCode, period?.from ?? '', period?.to ?? '')) : NONE, [meta.data, roadCode, period?.from, period?.to])
-  // First sensor by default; a picked one wins if it exists in the loaded road. State only stores edits.
-  const sensor = sensors.data?.features.some((f) => f.properties.id === sensorPick) ? sensorPick : (sensors.data?.features[0]?.properties.id ?? null)
+  const from = url.from || period?.from || ''
+  const to = url.to || period?.to || ''
 
-  const span = view ?? (period ? { from: period.from, to: period.to } : null)
-  const series = useAsync(sensor && span ? get<Series>(urls.series(sensor, span.from, span.to, level)) : NONE, [sensor, span?.from, span?.to, level])
-  const anomalies = useAsync(sensor && span ? get<SensorAnomalies>(urls.anomalies(sensor, span.from, span.to)) : NONE, [sensor, span?.from, span?.to])
-  const sensorName = sensors.data?.features.find((f) => f.properties.id === sensor)?.properties.name ?? ''
+  const sensors = useAsync(meta.data && road ? get<SensorMap>(urls.sensors(road, from, to)) : NONE, [meta.data, road, from, to])
+  const anomalies = useAsync(meta.data && road ? get<SensorAnomalies>(urls.anomalies(road, from, to)) : NONE, [meta.data, road, from, to])
+  const features = useMemo(() => sensors.data?.features ?? [], [sensors.data])
+  // First sensor by default; a picked one wins if it exists in the loaded road. The URL only stores edits.
+  const sensor = features.some((f) => f.properties.id === url.sensor) ? url.sensor : (features[0]?.properties.id ?? '')
+  const sensorFeature = features.find((f) => f.properties.id === sensor) ?? null
+
+  const series = useAsync(sensor ? get<Series>(urls.series(sensor, from, to, url.granularity)) : NONE, [sensor, from, to, url.granularity])
+
+  // Type/source/level filters applied client-side over the window (issue #14): the same
+  // filtered items drive the chart overlay, the anomaly list and the map marker colors.
+  const all = useMemo(() => anomalies.data?.anomalies ?? [], [anomalies.data])
+  const filtered = useMemo(
+    () => all.filter((a) => (!url.type || a.type === url.type) && (!url.source || a.source === url.source) && (!url.level || a.level === url.level)),
+    [all, url.type, url.source, url.level],
+  )
+  const sensorItems = useMemo(() => filtered.filter((a) => a.sensor_id === sensor), [filtered, sensor])
+  const listData: SensorAnomalies = useMemo(
+    () => ({ counts: { ours: sensorItems.filter((a) => a.source === 'ours').length, corporate: sensorItems.filter((a) => a.source === 'corporate').length }, anomalies: sensorItems }),
+    [sensorItems],
+  )
+
+  const heat = useMemo(() => {
+    const h: Record<string, SensorHeat> = {}
+    for (const a of filtered) {
+      const s = (h[a.sensor_id] ??= { count: 0, level: null })
+      s.count += 1
+      if (!s.level || LEVEL_ORDER[a.level] > LEVEL_ORDER[s.level]) s.level = a.level
+    }
+    return h
+  }, [filtered])
+
+  // The names in the type filter stay server-driven: labels collected from this window's API items.
+  const typeLabels = useMemo(() => {
+    const m: Record<string, string> = {}
+    for (const a of all) m[a.type] = a.type_label
+    return m
+  }, [all])
+
+  const sensorName = sensorFeature?.properties.name ?? ''
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
@@ -53,24 +84,14 @@ export default function App() {
     localStorage.setItem(THEME_KEY, next)
     setTheme(next)
   }
-  const changeRoad = (code: string) => {
-    setRoad(code)
-    setSensorPick(null)
-    setLevel('week')
-    setView(null)
-    setDetailId(null)
-  }
+  const openAnomaly = useCallback((id: string) => patch({ anomaly: id }), [patch])
+  const closeAnomaly = useCallback(() => patch({ anomaly: '' }), [patch])
+  /** A map marker click selects the sensor and opens its summary (sensor mode of the panel). */
+  const pickSensor = useCallback((id: string) => patch({ sensor: id, anomaly: '' }), [patch])
   const drillDown = (fromTs: string, toTs: string) => {
-    const next = ZOOM_ORDER[ZOOM_ORDER.indexOf(level) + 1]
+    const next = ZOOM_ORDER[ZOOM_ORDER.indexOf(url.granularity) + 1]
     if (!next) return // hour is the finest stored level: finer selection just zooms the loaded window
-    setView({ from: fromTs, to: toTs })
-    setLevel(next)
-    setDetailId(null)
-  }
-  const resetView = () => {
-    setLevel('week')
-    setView(null)
-    setDetailId(null)
+    patch({ from: fromTs, to: toTs, granularity: next, anomaly: '' })
   }
 
   if (meta.error)
@@ -86,8 +107,15 @@ export default function App() {
       </main>
     )
 
-  const features = sensors.data?.features ?? []
   const points = series.data?.points ?? NO_POINTS
+  const anomaliesLoading = !!road && !anomalies.data && !anomalies.error
+  // The URL alone decides what the panel shows: ?anomaly= opens it from the chart or a link,
+  // an explicit ?sensor= on the map opens it from a marker click — one panel for both (#12).
+  const panel = url.anomaly ? (
+    <SidePanel anomalyId={url.anomaly} roads={roads} features={features} onSelectAnomaly={openAnomaly} onClose={closeAnomaly} />
+  ) : url.section === 'map' && sensorFeature && url.sensor === sensorFeature.properties.id ? (
+    <SidePanel sensor={sensorFeature} items={sensorItems} roads={roads} onSelectAnomaly={openAnomaly} onClose={() => patch({ sensor: '' })} />
+  ) : null
 
   return (
     <main className="app">
@@ -98,69 +126,23 @@ export default function App() {
             Данные с {longDate(period.from)} по {longDate(period.to)}
           </p>
         </div>
-        <select id="road" name="road" value={roadCode} onChange={(e) => changeRoad(e.target.value)} aria-label="Дорога">
-          {roads.map((r) => (
-            <option key={r.code} value={r.code}>
-              {r.name}
-            </option>
-          ))}
-        </select>
         <button onClick={toggleTheme} aria-label="Переключить тему">
           {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
         </button>
       </header>
 
+      <Toolbar state={url} roads={roads} road={road} sensor={sensor || null} features={features} typeLabels={typeLabels} period={period} onPatch={patch} />
+
       <nav className="tabs">
         {TABS.map((t) => (
-          <button key={t.id} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
+          <button key={t.id} aria-pressed={url.section === t.id} onClick={() => patch({ section: t.id })}>
             {t.label}
           </button>
         ))}
       </nav>
 
-      {tab === 'overview' && (
+      {url.section === 'overview' && (
         <section className="board">
-          <div className="card filters">
-            <select
-              id="sensor"
-              name="sensor"
-              value={sensor ?? ''}
-              onChange={(e) => {
-                setSensorPick(e.target.value)
-                setDetailId(null)
-              }}
-              aria-label="Датчик"
-            >
-              {features.map((f) => (
-                <option key={f.properties.id} value={f.properties.id}>
-                  {f.properties.name}
-                </option>
-              ))}
-            </select>
-            <div className="seg" role="group" aria-label="Детализация">
-              {ZOOM_ORDER.map((g) => (
-                <button
-                  key={g}
-                  aria-pressed={level === g}
-                  onClick={() => {
-                    setLevel(g)
-                    setDetailId(null)
-                  }}
-                >
-                  {GRANULARITY_LABELS[g]}
-                </button>
-              ))}
-            </div>
-            {view && (
-              <>
-                <span className="window-chip muted">
-                  {longDate(view.from)} — {longDate(view.to)}
-                </span>
-                <button onClick={resetView}>к началу периода</button>
-              </>
-            )}
-          </div>
-
           {sensors.error && (
             <div className="card chart-card">
               <ErrorState message={sensors.error} />
@@ -191,7 +173,7 @@ export default function App() {
               <EmptyState message="За выбранный период у датчика нет измерений." />
             </div>
           )}
-          {sensor && series.data && points.length > 0 && <Chart points={points} anomalies={anomalies.data?.anomalies ?? NO_ANOMALIES} level={level} dark={theme === 'dark'} name={sensorName} onZoom={drillDown} onAnomalyClick={setDetailId} />}
+          {sensor && series.data && points.length > 0 && <Chart points={points} anomalies={sensorItems} level={url.granularity} dark={theme === 'dark'} name={sensorName} onZoom={drillDown} onAnomalyClick={openAnomaly} />}
 
           <aside className="card side">
             <h3>Аномалии датчика</h3>
@@ -205,13 +187,13 @@ export default function App() {
               )
             ) : (
               <>
-                {detailId && <DetailPanel id={detailId} onClose={() => setDetailId(null)} />}
+                {panel}
                 {anomalies.error && <ErrorState message={anomalies.error} />}
-                {!anomalies.data && !anomalies.error && <Spinner label="Загрузка аномалий…" />}
+                {anomaliesLoading && <Spinner label="Загрузка аномалий…" />}
                 {anomalies.data && (
                   <>
-                    <CountChips counts={anomalies.data.counts} />
-                    {anomalies.data.anomalies.length === 0 ? <p className="muted small">За выбранный период аномалий нет.</p> : <AnomalyList data={anomalies.data} onSelect={setDetailId} />}
+                    <CountChips counts={listData.counts} />
+                    {sensorItems.length === 0 ? <p className="muted small">За выбранный период и фильтры аномалий нет.</p> : <AnomalyList data={listData} onSelect={openAnomaly} />}
                   </>
                 )}
               </>
@@ -220,9 +202,36 @@ export default function App() {
         </section>
       )}
 
-      {tab === 'map' && <Placeholder title="Карта аномалий" text="Точки датчиков на OpenStreetMap, подсветка мега-аномалий и панель подробностей по клику." issue={12} />}
+      {url.section === 'map' && (
+        <section className="board">
+          <div className="card map-card">
+            <h3>Карта аномалий</h3>
+            <MapStates error={sensors.error} loading={!sensors.data && !sensors.error} empty={!!sensors.data && features.length === 0} />
+            {features.length > 0 && (
+              <>
+                <MapSection features={features} heat={heat} selectedId={sensor || null} dark={theme === 'dark'} onSelectSensor={pickSensor} />
+                <div className="map-legend">
+                  <span>размер точки — число аномалий за выбранный период (серая — ни одной)</span>
+                  <span className="legend-levels">
+                    цвет — самый частый уровень за период: <i className="dot lv-low" /> низкий · <i className="dot lv-medium" /> средний · <i className="dot lv-high" /> высокий · <i className="dot lv-critical" />{' '}
+                    критический
+                  </span>
+                  <span>
+                    <i className="dot ring-mega" /> кольцо — датчик с мега-аномалией; клик по точке выбирает датчик
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
 
-      {tab === 'compare' && <Placeholder title="Сравнение алгоритмов" text="Где наш алгоритм и корпоративная система находят одно и то же, где расходятся и насколько новый подход лучше (FR4)." issue={13} />}
+          <aside className="card side">
+            <h3>Подробнее</h3>
+            {panel ?? <p className="muted small">Кликните по датчику на карте или по аномалии на графике — здесь появятся аномалии датчика и подробности. Фильтры действуют и на карту.</p>}
+          </aside>
+        </section>
+      )}
+
+      {url.section === 'compare' && <Placeholder title="Сравнение алгоритмов" text="Где наш алгоритм и корпоративная система находят одно и то же, где расходятся и насколько новый подход лучше (FR4)." issue={13} />}
     </main>
   )
 }
