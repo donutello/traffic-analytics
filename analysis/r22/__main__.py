@@ -3,4 +3,6 @@
 Run it with: uv run python -m analysis.r22
 """
 
-print("analysis.r22: nothing here yet, see the module README")
+from .pipeline import run
+
+run()

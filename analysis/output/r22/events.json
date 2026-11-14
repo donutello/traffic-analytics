@@ -1,0 +1,162 @@
+[
+  {
+    "id": "r22-weather-20231102",
+    "date": "2023-11-02",
+    "category": "weather",
+    "title": "Туман над областью: жёлтый уровень до шести утра",
+    "description": "В ночь на 3 ноября видимость на дорогах местами падала до сотен метров, предупреждение Гидрометцентра действовало с 18:00 до 6:00.",
+    "source_url": "https://moe-online.ru/news/weather/1171551"
+  },
+  {
+    "id": "r22-holiday-20240101",
+    "date": "2024-01-01",
+    "category": "holiday",
+    "title": "Новогодние каникулы 2024",
+    "description": "Официальные нерабочие дни с 30 декабря по 8 января.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2024/"
+  },
+  {
+    "id": "r22-weather-20240103",
+    "date": "2024-01-03",
+    "category": "weather",
+    "title": "Аномальные морозы рождественской недели",
+    "description": "С 3 по 7 января в северной части Воронежской области, где стоит датчик км 448, держалось от -15 до -22; автомобилистам советовали запас горючего в дальних поездках.",
+    "source_url": "https://moe-online.ru/news/weather/1176713"
+  },
+  {
+    "id": "r22-accident-20240117",
+    "date": "2024-01-17",
+    "category": "accident",
+    "title": "KIA Rio влетела в КамАЗ на 484 км «Курска - Саратова»",
+    "description": "В 20:40 легковушка вылетела на встречку у села Третьяки, в зоне датчика км 478; водитель «Киа» попал в районную больницу.",
+    "source_url": "https://vk.com/wall-76328522_22808"
+  },
+  {
+    "id": "r22-holiday-20250101",
+    "date": "2025-01-01",
+    "category": "holiday",
+    "title": "Новогодние каникулы 2025",
+    "description": "Официальные нерабочие дни с 1 по 8 января.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2025/"
+  },
+  {
+    "id": "r22-roadworks-20240401",
+    "date": "2024-04-01",
+    "category": "roadworks",
+    "title": "Начался капитальный ремонт участка км 465-484",
+    "description": "По контракту работы стартовали 1 апреля 2024 года: подъезд к Саратову расширяют до четырёх полос с вводом объекта в ноябре 2026; ремонт идёт под датчиком км 478.",
+    "source_url": "https://roads.ru/forum/topic/39782-r-22-podezd-k-saratovu-km-465-km-484-kapitalnyy-remont-s-rasshireniem-do-4-polos/"
+  },
+  {
+    "id": "r22-holiday-20240509",
+    "date": "2024-05-09",
+    "category": "holiday",
+    "title": "Длинные выходные Дня Победы (9-12 мая)",
+    "description": "Постановление Правительства №1314 перенесло выход с 6 января на 10 мая; ожидаемый выездной пик накануне праздника.",
+    "source_url": "https://www.consultant.ru/document/cons_doc_LAW_449986/262c5d0d25135393aa6fe898ec1141cd79f3ddf2/"
+  },
+  {
+    "id": "r22-roadworks-20240730",
+    "date": "2024-07-30",
+    "category": "roadworks",
+    "title": "«70» и «Обгон запрещён» на всём ремонтируемом участке",
+    "description": "Водители сообщают об ограничениях и дежурящем ДПС даже там, где работа техники не видна; условия езды по участку под датчиком ухудшены на всё лето.",
+    "source_url": "https://roads.ru/forum/topic/39782-r-22-podezd-k-saratovu-km-465-km-484-kapitalnyy-remont-s-rasshireniem-do-4-polos/"
+  },
+  {
+    "id": "r22-roadworks-20250122",
+    "date": "2025-01-22",
+    "category": "roadworks",
+    "title": "Светофоры и проезд по одной полосе на ремонте",
+    "description": "Осенью 2024-го светофорных перекрёстков на участке доходило до четырёх, зимой их меньше, но очереди и потери времени остаются.",
+    "source_url": "https://roads.ru/forum/topic/39782-r-22-podezd-k-saratovu-km-465-km-484-kapitalnyy-remont-s-rasshireniem-do-4-polos/"
+  },
+  {
+    "id": "r22-holiday-20250501",
+    "date": "2025-05-01",
+    "category": "holiday",
+    "title": "Праздник Весны и Труда (выходные 1-4 мая)",
+    "description": "Нерабочая неделя по производственному календарю 2025 года.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2025/"
+  },
+  {
+    "id": "r22-holiday-20250509",
+    "date": "2025-05-09",
+    "category": "holiday",
+    "title": "День Победы: выходные 8-11 мая",
+    "description": "Переносы 4 января на 2 мая и 23 февраля на 8 мая сделали праздничную неделю длинной; пик дачного трафика накануне.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2025/"
+  },
+  {
+    "id": "r22-roadworks-20250525",
+    "date": "2025-05-25",
+    "category": "roadworks",
+    "title": "Два светофорных участка и временная насыпь перед Третьяками",
+    "description": "Движение перепустили через временную дорогу в балке перед селом со стороны Борисоглебска; светофоры переключаются медленно, патрули ДПС замечали даже в пять утра.",
+    "source_url": "https://roads.ru/forum/topic/39782-r-22-podezd-k-saratovu-km-465-km-484-kapitalnyy-remont-s-rasshireniem-do-4-polos/page/2/"
+  },
+  {
+    "id": "r22-roadworks-20250821",
+    "date": "2025-08-21",
+    "category": "roadworks",
+    "title": "Заключён контракт на обход Борисоглебска",
+    "description": "ФКУ Упрдор Москва - Харьков: стройка новой дороги с 444-го по 459-й км стартует в сентябре 2025-го, завершение в 2029-м; работы лягут рядом с датчиком км 448.",
+    "source_url": "https://rosavtodor.gov.ru/press-center/vesti-regionov/716605"
+  },
+  {
+    "id": "r22-accident-20251208",
+    "date": "2025-12-08",
+    "category": "accident",
+    "title": "Два смертельных ДТП за вечер на 455 км",
+    "description": "В 16:38 столкнулись ВАЗ-21110 и «Ивеко» (водитель легковушки умер в райбольнице); в 19:50 на том же участке за выездом из Борисоглебска погиб водитель «Лады».",
+    "source_url": "https://ria-glas.ru/2025/novosti/dva-smertelnyh-dtp-pod-borisoglebskom-v-odin-vecher-i-pochti-na-odnom-i-tom-zhe-meste/"
+  },
+  {
+    "id": "r22-holiday-20260101",
+    "date": "2026-01-01",
+    "category": "holiday",
+    "title": "Новогодние каникулы 2026",
+    "description": "Официальные нерабочие дни с 1 по 9 января 2026.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2026/"
+  },
+  {
+    "id": "r22-weather-20260115",
+    "date": "2026-01-15",
+    "category": "weather",
+    "title": "Аномальные морозы 15-19 января",
+    "description": "Штормовое предупреждение Гидрометцентра: среднесуточная температура на 7-9 градусов ниже нормы, днём 18 января до -20.",
+    "source_url": "https://www.kommersant.ru/doc/8341434"
+  },
+  {
+    "id": "r22-roadworks-20260213",
+    "date": "2026-02-13",
+    "category": "roadworks",
+    "title": "2026 - финальный сезон ремонта: укладка верхнего слоя",
+    "description": "Готовность объекта к февралю - 29 процентов; в оставшийся сезон щебёночно-мастичный асфальтобетон на 18 км и ввод дороги к ноябрю.",
+    "source_url": "https://www.akm.ru/press/v_2026_godu_bolee_18_km_trassy_r_22_kaspiy_podezd_k_saratovu_budut_rasshireny_do_chetyrekh_polos_dvi/"
+  },
+  {
+    "id": "r22-accident-20260403",
+    "date": "2026-04-03",
+    "category": "accident",
+    "title": "Пьяный водитель Infiniti устроил аварию с бензовозом",
+    "description": "Около 5:15 в Борисоглебске «Инфинити» влетела в KIA Sportage и вылетела на встречку к бензовозу; трое пассажиров погибли, один в больнице.",
+    "source_url": "https://borisoglebsk.riavrn.ru/news/voronezhskij-sud-vynes-prigovor-pyanomu-vinovniku-dtp-s-infiniti-i-benzovozom-v-borisoglebske/"
+  },
+  {
+    "id": "r22-accident-20260605",
+    "date": "2026-06-05",
+    "category": "accident",
+    "title": "ВАЗ-2114 и Hummer столкнулись на 441 км",
+    "description": "Сводка МЧС Воронежской области: столкновение в 11:32 в Грибановском районе, есть пострадавшие; на том же «Курске - Саратов» в семи километрах перед датчиком км 448.",
+    "source_url": "https://36.mchs.gov.ru/deyatelnost/press-centr/operativnaya-informaciya/5770481"
+  },
+  {
+    "id": "r22-weather-20250713",
+    "date": "2025-07-13",
+    "category": "weather",
+    "title": "Жара до +36: штормовое предупреждение продлили",
+    "description": "Гидрометцентр оставил предупреждение в силе и на понедельник 14 июля; неделя аномальной жары стояла над всем регионом.",
+    "source_url": "https://riavrn.ru/news/v-voronezhskoj-oblasti-prodlili-shtormovoe-preduprezhdenie-iz-za-zhary-do-36-gradusov/"
+  }
+]
