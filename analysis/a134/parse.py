@@ -22,8 +22,18 @@ RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / ROAD
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output" / ROAD
 
 DATE_RE = re.compile(r"^\s*\d{1,2}[./]\d{1,2}[./]\d{4}(\s+\d{1,2}:\d{2}(:\d{2})?)?\s*$")
+DATE_FORMATS = ("%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%d.%m.%Y")
 KM_RE = re.compile(r"км\s*(\d+)(?:\+(\d+))?", re.IGNORECASE)
 SKIPPED = frozenset({"итого", "среднее", "%", "дата"})
+
+# The customer wrote row timestamps in Moscow time, but every hour of the merged report
+# labelled before 27.12.2023 00:00 sits 3 hours in front of the clock the whole 2024-2026
+# part follows (each 2023 month-hour profile correlates +0.99 with the later one shifted
+# by +3 h and about -0.5 unshifted: the counters were re-timed at the New Year rollover).
+# The parser adds those 3 hours to the early labels. The shift would re-report
+# 27.12.2023 00:00-03:00, which the corrected recorder wrote itself, so shifted hours that
+# land in the local-time period are dropped and the corrected rows behind them win.
+LOCAL_TIME_FROM = datetime(2023, 12, 27, 0, 0, tzinfo=MSK)
 
 # Only the columns the contract needs: totals per vehicle class plus per-direction
 # speed and load. The export's per-direction splits by vehicle class are dropped.
@@ -63,8 +73,8 @@ TABLE_COLUMNS = ["section", "ts", *KEEP_COLUMNS]
 
 # Coordinates for known sensors, keyed by the km mark as the export writes it.
 # Approximate, taken from landmarks on OSM (the pedestrian bridges and bus stops of the
-# М-4 «Дон» — Воронеж rebuilding, «хутор Ветряк» near km 8+150). Add an entry for every
-# new sensor that appears in the exports (issue #22).
+# М-4 «Дон» — Воронеж rebuilding, «хутор Ветряк» near km 8+150). The customer's report
+# carries this one section; add an entry for every new sensor found in later exports.
 KNOWN_SENSORS: dict[str, dict[str, float]] = {
     "8+100": {"km": 8.1, "lat": 51.7729, "lon": 39.1891},
 }
@@ -86,11 +96,13 @@ def _parse_datetime(cell: object) -> datetime | None:
         return cell.replace(tzinfo=MSK) if cell.tzinfo is None else cell.astimezone(MSK)
     if isinstance(cell, date):
         return datetime(cell.year, cell.month, cell.day, tzinfo=MSK)
-    if DATE_RE.match(str(cell)):
-        try:
-            return pd.to_datetime(str(cell), dayfirst=True).to_pydatetime().replace(tzinfo=MSK)
-        except ValueError:
-            return None
+    text = str(cell).strip().replace("/", ".")
+    if DATE_RE.match(text):
+        for fmt in DATE_FORMATS:
+            try:
+                return datetime.strptime(text, fmt).replace(tzinfo=MSK)
+            except ValueError:
+                continue
     return None
 
 
@@ -125,6 +137,10 @@ def parse_traffic_excel(filepath: Path) -> pd.DataFrame:
         if ts is None:
             continue
         ts = ts.replace(minute=0, second=0, microsecond=0)
+        if ts < LOCAL_TIME_FROM:  # UTC-labelled early hour: put it on the local clock
+            ts += timedelta(hours=3)
+            if ts >= LOCAL_TIME_FROM:
+                continue  # the corrected recorder reported this hour itself in local time
 
         values = list(row[1:29])
         values += [None] * (len(SOURCE_COLUMNS) - len(values))

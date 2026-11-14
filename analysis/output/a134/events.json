@@ -1,0 +1,162 @@
+[
+  {
+    "id": "a134-holiday-20230101",
+    "date": "2023-01-01",
+    "category": "holiday",
+    "title": "Новогодние каникулы",
+    "description": "Официальные нерабочие дни с 1 по 8 января. В первые дни года поток на въезде в город заметно тише обычного.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2023/"
+  },
+  {
+    "id": "a134-holiday-20230509",
+    "date": "2023-05-09",
+    "category": "holiday",
+    "title": "Майские праздники и День Победы",
+    "description": "Длинные выходные с 6 по 9 мая, 8 мая перенесено с 1 января. 9 мая - перекрытия центра Воронежа, утром поток ниже обычного.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2023/"
+  },
+  {
+    "id": "a134-weather-20230603",
+    "date": "2023-06-03",
+    "category": "weather",
+    "title": "Ливень с грозой, обрушение части Каменного моста",
+    "description": "Сильный дождь около 16 часов, подтопленные улицы, режим ЧП районного масштаба из-за обрушения части Каменного моста; скорость на подъездах упала.",
+    "source_url": "https://www.vrn.kp.ru/daily/27510/4773067/"
+  },
+  {
+    "id": "a134-outage-20230928",
+    "date": "2023-09-28",
+    "category": "outage",
+    "title": "Отключили светофор на Остужевском кольце",
+    "description": "Днём не работал светофор на Остужевском кольце, образовался затор. Часть оборудования при отключении могла остаться без питания.",
+    "source_url": "https://riavrn.ru/society/razvyazka-na-ostuzheva/page/2/"
+  },
+  {
+    "id": "a134-roadworks-20231013",
+    "date": "2023-10-13",
+    "category": "roadworks",
+    "title": "Открыли движение по двухуровневой Остужевской развязке",
+    "description": "13 октября полностью открыли движение по новой развязке на Минской и Остужева; до этого участки въезда в город были закрыты, распределение потоков изменилось.",
+    "source_url": "https://abireg.ru/newsitem/99723/"
+  },
+  {
+    "id": "a134-accident-20231026",
+    "date": "2023-10-26",
+    "category": "accident",
+    "title": "Автобус с 15 пассажирами врезался в две фуры на М-4",
+    "description": "Утром на 621-м км М-4 «Дон» в Бобровском районе автобус столкнулся с МАЗ и Volvo, пострадала пассажирка; движение по направлению к Воронежу было затруднено несколько часов.",
+    "source_url": "https://www.vrn.kp.ru/online/news/5517865/"
+  },
+  {
+    "id": "a134-weather-20231212",
+    "date": "2023-12-12",
+    "category": "weather",
+    "title": "Снежные заносы: 84 автобуса не вышли на линию",
+    "description": "Из-за заносов и гололёда не вышли на линию 84 межмуниципальных автобуса; на М-4 «Дон» в этот день обещали снегопад и метель.",
+    "source_url": "https://riavrn.ru/news/iz-za-snezhnyh-zanosov-na-liniyu-v-voronezhskoj-oblasti-ne-vyshli-84-rejsovyh-avtobusa/"
+  },
+  {
+    "id": "a134-weather-20231215",
+    "date": "2023-12-15",
+    "category": "weather",
+    "title": "Метель и сильный снегопад на М-4 «Дон»",
+    "description": "14-15 декабря сильный снегопад, метель, снежные заносы и гололёд на трассе, ветер до 15-20 м/с; водителей просили быть осторожными.",
+    "source_url": "https://vestivrn.ru/news/2023-12-15/voronezhskikh-voditelei-prizvali-byt-ostorozhnymi-na-m-4-don-vo-vremya-snegopada/"
+  },
+  {
+    "id": "a134-weather-20240208",
+    "date": "2024-02-08",
+    "category": "weather",
+    "title": "Циклон «Ольга»: мокрый снег на трассе",
+    "description": "8 февраля циклон «Ольга»: сильный мокрый снег и дождь; «Автодор» просил соблюдать скоростной режим на М-4 «Дон» из-за риска ДТП.",
+    "source_url": "https://vestivrn.ru/news/2024-02-08/voronezhcev-predupredili-o-riskakh-dtp-na-trasse-m-4-don-iz-za-snega/"
+  },
+  {
+    "id": "a134-weather-20240212",
+    "date": "2024-02-12",
+    "category": "weather",
+    "title": "Страшный гололёд в Воронеже",
+    "description": "12 февраля гололёд в городе и области: автобусы отменяли рейсы в Рамони и Грибановском районе; водителей предупреждали о снегопаде и дожде на М-4 «Дон».",
+    "source_url": "https://tv-gubernia.ru/novosti/obwestvo/nado-bylo-nadevat-konki-kak-voronezhcy-perezhivajut-strashnyj-gololjod/"
+  },
+  {
+    "id": "a134-roadworks-20240419",
+    "date": "2024-04-19",
+    "category": "roadworks",
+    "title": "До конца мая закрыли часть дороги на улице Остужева",
+    "description": "С 19 апреля на время работ по Остужевской развязке закрыт участок улицы Остужева, въезд в город со стороны трассы перераспределился.",
+    "source_url": "https://riavrn.ru/society/razvyazka-na-ostuzheva/page/2/"
+  },
+  {
+    "id": "a134-holiday-20240501",
+    "date": "2024-05-01",
+    "category": "holiday",
+    "title": "Первые майские выходные: дачные поездки",
+    "description": "Отдых с 28 апреля по 1 мая (переносы с 27 апреля и 2 ноября). Поток в сторону области и Воронежа выше обычного.",
+    "source_url": "https://www.consultant.ru/document/cons_doc_LAW_449986/262c5d0d25135393aa6fe898ec1141cd79f3ddf2/"
+  },
+  {
+    "id": "a134-accident-20240602",
+    "date": "2024-06-02",
+    "category": "accident",
+    "title": "Девять машин столкнулись на Московском проспекте",
+    "description": "2 июня в первой половине дня у пересечения Московского проспекта и улицы Беговой столкнулись девять автомобилей, образовалась пробка.",
+    "source_url": "https://gorcom36.ru/content/o-massovoy-avarii-na-moskovskom-prospekte-rasskazali-voronezhtsy/"
+  },
+  {
+    "id": "a134-holiday-20250101",
+    "date": "2025-01-01",
+    "category": "holiday",
+    "title": "Новогодние каникулы",
+    "description": "Официальные нерабочие дни с 29 декабря по 8 января. 1 января поток на подъезде заметно тише, чем в остальные каникульные дни.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2025/"
+  },
+  {
+    "id": "a134-accident-20250225",
+    "date": "2025-02-25",
+    "category": "accident",
+    "title": "Серьёзное ДТП с BMW на Московском проспекте",
+    "description": "25 февраля серьёзная авария на Московском проспекте: легковой автомобиль после столкновения превратился в груду металла, движение по проспекту стояло.",
+    "source_url": "https://riavrn.ru/accidents/avariya-na-moskovskom-prospekte-voronezh/"
+  },
+  {
+    "id": "a134-holiday-20250501",
+    "date": "2025-05-01",
+    "category": "holiday",
+    "title": "Первые майские выходные 2025",
+    "description": "Отдых с 1 по 4 мая (перенос выходного с 4 января на 2 мая). Дачный и прогулочный поток выше обычного.",
+    "source_url": "https://www.consultant.ru/law/ref/calendar/proizvodstvennye/2025/"
+  },
+  {
+    "id": "a134-other-20250520",
+    "date": "2025-05-20",
+    "category": "other",
+    "title": "Провал коллектора: Московский проспект частично перекрыт",
+    "description": "20 мая Московский проспект частично перекрыли из-за провала коллектора, полосность уменьшилась, образовалась пробка.",
+    "source_url": "https://riavrn.ru/accidents/avariya-na-moskovskom-prospekte-voronezh/"
+  },
+  {
+    "id": "a134-weather-20250803",
+    "date": "2025-08-03",
+    "category": "weather",
+    "title": "Ливень затопил улицы Воронежа",
+    "description": "3 августа вечером сильнейший ливень с грозой затопил несколько районов города, движение транспорта было нарушено.",
+    "source_url": "https://ura.news/news/1052970310"
+  },
+  {
+    "id": "a134-roadworks-20251008",
+    "date": "2025-10-08",
+    "category": "roadworks",
+    "title": "Возобновился ремонт обхода Воронежа на М-4",
+    "description": "С 8 октября ремонт 25-километрового участка М-4 «Дон» с 492-го по 517-й км (обход Воронежа): временные сужения проезжей части на отдельных этапах.",
+    "source_url": "https://russianhighways.ru/press/news/154710/"
+  },
+  {
+    "id": "a134-accident-20251215",
+    "date": "2025-12-15",
+    "category": "accident",
+    "title": "Массовое ДТП с рейсовыми автобусами на 571-м км М-4",
+    "description": "В ночь на 16 декабря на 571-м км М-4 «Дон» в Каширском районе столкнулись семь машин, включая два рейсовых автобуса; четверо пострадали, возбуждено дело. Утром движение в сторону Воронежа было затруднено.",
+    "source_url": "https://obozvrn.ru/archives/338984"
+  }
+]
