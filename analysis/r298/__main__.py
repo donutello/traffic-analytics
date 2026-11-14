@@ -3,4 +3,6 @@
 Run it with: uv run python -m analysis.r298
 """
 
-print("analysis.r298: nothing here yet, see the module README")
+from .pipeline import run
+
+run()
