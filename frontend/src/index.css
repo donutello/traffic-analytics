@@ -1,9 +1,12 @@
-/* Design tokens. The three data-state colors (FR2) are shared by the chart, the map and the lists. */
+/* Design tokens (issue #10). One place for colors (including the three data states, FR2),
+   spacing, fonts, radii and shadows. The chart and the map read the state colors from here
+   at render time, so both themes carry one palette (docs/adr/0008). */
 :root,
 [data-theme='light'] {
   --color-normal: #2563eb;
   --color-anomaly: #dc2626;
   --color-imputed: #94a3b8;
+  --color-mega: #a21caf;
 
   --color-text: #111827;
   --color-muted: #64748b;
@@ -23,6 +26,7 @@
   --color-normal: #60a5fa;
   --color-anomaly: #f87171;
   --color-imputed: #64748b;
+  --color-mega: #e879f9;
 
   --color-text: #e5e7eb;
   --color-muted: #94a3b8;
@@ -38,8 +42,52 @@
   color-scheme: dark;
 }
 
+/* No data-theme yet means nothing was stored: follow the system. A manual choice
+   is always written to data-theme (see theme.ts), so this only covers first load. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-normal: #60a5fa;
+    --color-anomaly: #f87171;
+    --color-imputed: #64748b;
+    --color-mega: #e879f9;
+
+    --color-text: #e5e7eb;
+    --color-muted: #94a3b8;
+    --color-bg: #0f172a;
+    --color-surface: #1e293b;
+    --color-border: #334155;
+
+    --lv-low: #fbbf24;
+    --lv-medium: #fb923c;
+    --lv-high: #f87171;
+    --lv-critical: #fca5a5;
+
+    color-scheme: dark;
+  }
+}
+
 :root {
-  font-family: system-ui, sans-serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-1: 0 1px 2px rgb(15 23 42 / 8%);
+  --shadow-2: 0 8px 28px rgb(15 23 42 / 16%);
+}
+
+:root {
+  font-family: var(--font-sans);
   color: var(--color-text);
   background: var(--color-bg);
 }
@@ -55,8 +103,8 @@ input {
   color: inherit;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
   cursor: pointer;
 }
 
@@ -65,7 +113,12 @@ button:hover {
 }
 
 code {
+  font-family: var(--font-mono);
   font-size: 0.85em;
+}
+
+a {
+  color: var(--color-normal);
 }
 
 /* Layout: NFR1 asks for 1200–1920px desktop widths. The track is 1140px so that a window at
@@ -74,9 +127,9 @@ code {
   max-width: 1920px;
   min-width: 1140px;
   margin: 0 auto;
-  padding: 20px 28px 40px;
+  padding: var(--space-5) var(--space-6) var(--space-7);
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .boot {
@@ -89,7 +142,7 @@ code {
 .top {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--space-5);
   flex-wrap: wrap;
 }
 
@@ -102,16 +155,6 @@ code {
   margin: 2px 0 0;
 }
 
-.top .period {
-  display: flex;
-  gap: 12px;
-  margin-left: auto;
-}
-
-.top .period input {
-  margin-left: 6px;
-}
-
 .muted {
   color: var(--color-muted);
 }
@@ -122,15 +165,15 @@ code {
 
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   border-bottom: 1px solid var(--color-border);
 }
 
 .tabs button {
   border: none;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: none;
-  padding: 10px 16px;
+  padding: var(--space-2) var(--space-4);
 }
 
 .tabs button[aria-pressed='true'] {
@@ -141,32 +184,40 @@ code {
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-1);
 }
 
 .card h3 {
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-2);
   font-size: 16px;
 }
 
+/* Overview: the chart column breathes up to 1920px, the side column stays readable. */
 .board {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
   grid-template: auto 1fr / minmax(0, 1fr) 360px;
+  align-items: start;
 }
 
 .filters {
   grid-column: 1;
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
-  padding: 10px 16px;
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-4);
+}
+
+.filters select {
+  max-width: 420px;
 }
 
 .seg {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .seg button[aria-pressed='true'] {
@@ -174,18 +225,30 @@ code {
   color: var(--color-normal);
 }
 
+.window-chip {
+  font-size: 13px;
+}
+
 .chart-card {
   grid-column: 1;
   grid-row: 2;
+  min-height: 420px;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
 }
 
 .chart-title {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 15px;
 }
 
+.chart-canvas {
+  height: 460px;
+}
+
 .chart-hint {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: 12px;
   color: var(--color-muted);
 }
@@ -194,10 +257,13 @@ code {
   grid-column: 2;
   grid-row: 1 / span 2;
   overflow: auto;
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
 }
 
 .counts {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 13px;
   color: var(--color-muted);
 }
@@ -207,17 +273,17 @@ code {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .anomaly {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 10px;
+  gap: var(--space-2);
   align-items: center;
   width: 100%;
   text-align: left;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .anomaly .a-main {
@@ -274,195 +340,145 @@ code {
   font-size: 11px;
   font-weight: 700;
   color: var(--color-surface);
-  background: var(--color-anomaly);
-  border-radius: 5px;
-  padding: 1px 6px;
+  background: var(--color-mega);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-1);
 }
 
-.map-link {
-  display: inline-block;
-  margin-top: 12px;
-  border: none;
-  background: none;
-  color: var(--color-normal);
-  padding: 0;
-}
-
-/* Map. NFR10 offline fallback: tiles stay uncovered on load, so hide the failed
-   tiles and keep a schematic background instead of Leaflet's grey gaps. */
-.map-row {
+/* Loading / empty / error states, reused by every section (issues #11–#14). */
+.state {
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-muted);
 }
 
-.map-wrap {
-  position: relative;
-  padding: 0;
-  overflow: hidden;
-}
-
-.map {
-  height: 560px;
-}
-
-.leaflet-container {
-  background: var(--color-bg);
-  font: inherit;
-}
-
-.map-wrap.offline .leaflet-tile {
-  visibility: hidden;
-}
-
-.map-wrap.offline .map {
-  background: repeating-linear-gradient(45deg, var(--color-bg), var(--color-bg) 18px, var(--color-surface) 18px, var(--color-surface) 36px);
-}
-
-[data-theme='dark'] .leaflet-tile {
-  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
-}
-
-.map-note {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 500;
+.state p {
   margin: 0;
-  font-size: 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 4px 10px;
 }
 
-.mini-box {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 600;
-  width: 190px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  overflow: hidden;
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-normal);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
 }
 
-.mini {
-  height: 130px;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.mini-box span {
-  display: block;
+.state-error {
+  color: var(--color-anomaly);
+}
+
+.state-error button {
+  margin-top: var(--space-1);
+}
+
+/* Honest placeholders for the sections built in later issues (#12, #13). */
+.placeholder {
+  display: grid;
+}
+
+.placeholder .card {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  padding: var(--space-6);
+  border-style: dashed;
+}
+
+.placeholder p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.wip {
   font-size: 11px;
-  padding: 2px 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-2);
 }
 
-.panel {
-  overflow: auto;
-}
-
-.hint {
-  color: var(--color-muted);
-}
-
-.compare {
+/* Inline anomaly detail in the side column; the full side panel comes in issue #12. */
+.detail-panel {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-anomaly);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
   display: grid;
-  grid-template-columns: minmax(0, 720px);
-}
-
-.compare p {
-  margin: 8px 0;
-}
-
-/* Anomaly detail overlay. */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgb(0 0 0 / 45%);
-  display: grid;
-  place-items: center;
-}
-
-.detail {
-  width: min(680px, calc(100vw - 80px));
-  max-height: calc(100vh - 80px);
-  overflow: auto;
+  gap: var(--space-2);
 }
 
 .detail-head {
   display: flex;
   justify-content: space-between;
   align-items: start;
+  gap: var(--space-2);
 }
 
-.detail-head h3 {
+.detail-head h4 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
 }
 
-.detail .dot {
-  background: currentcolor;
+.detail-panel .close {
+  border: none;
+  background: none;
+  padding: 0 var(--space-1);
+  color: var(--color-muted);
 }
 
 .kv {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  margin-top: 10px;
+  font-size: 13px;
 }
 
 .kv th {
   text-align: left;
   font-weight: 500;
   color: var(--color-muted);
-  padding: 4px 16px 4px 0;
+  padding: 3px var(--space-3) 3px 0;
   white-space: nowrap;
   vertical-align: top;
 }
 
 .kv td {
-  padding: 4px 0;
+  padding: 3px 0;
 }
 
 .desc {
-  border-left: 3px solid var(--color-anomaly);
-  padding: 4px 12px;
-  margin: 12px 0;
-}
-
-.event {
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-top: 12px;
-}
-
-.event h4 {
+  border-left: 3px solid var(--color-mega);
+  padding: var(--space-1) var(--space-3);
   margin: 0;
-  font-size: 14px;
-}
-
-.event p {
-  font-size: 13px;
-  color: var(--color-muted);
 }
 
 details {
-  margin-top: 14px;
   font-size: 13px;
 }
 
 details pre {
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
   overflow: auto;
+  max-height: 220px;
+  font-family: var(--font-mono);
   font-size: 12px;
 }

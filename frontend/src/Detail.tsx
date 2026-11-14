@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { get, urls } from './api'
+import { Spinner, ErrorState } from './States'
 import { useAsync } from './useAsync'
 import { daysAgo, LEVEL_CLASSES, type AnomalyDetail } from './types'
 
-const num = (v: number | null, unit = ''): string => (v === null ? '—' : `${v.toLocaleString('ru-RU')}${unit}`)
+const num = (v: number | null | undefined, unit = ''): string => (v === null || v === undefined ? '—' : `${v.toLocaleString('ru-RU')}${unit}`)
 
-function row(label: string, value: string) {
+function row(label: string, value: ReactNode) {
   return (
     <tr>
       <th>{label}</th>
@@ -14,61 +15,42 @@ function row(label: string, value: string) {
   )
 }
 
-export default function DetailOverlay({ id, onClose }: { id: string; onClose: () => void }) {
+/** Minimal fields for one anomaly, inline in the side column (issue #11). The full side panel with the event comes in #12. */
+export default function DetailPanel({ id, onClose }: { id: string; onClose: () => void }) {
   const { data, error } = useAsync(get<AnomalyDetail>(urls.anomaly(id)), [id])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="detail card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        {!data && <p className="muted">{error ?? 'Загрузка…'}</p>}
-        {data && (
-          <>
-            <div className="detail-head">
-              <h3>
-                <span className={`dot ${LEVEL_CLASSES[data.level]}`} aria-hidden /> {data.type_label} ·{' '}
-                <span className={LEVEL_CLASSES[data.level]}>{data.level_label} уровень</span>
-              </h3>
-              <button className="close" onClick={onClose} aria-label="Закрыть">
-                ✕
-              </button>
-            </div>
-            <table className="kv">
-              <tbody>
-                {row('время', `${data.starts_label} — ${data.ends_label} (${data.duration_label})${data.days_ago ? `, ${daysAgo(data.days_ago)}` : ''}`)}
-                {row('датчик', data.sensor_name)}
-                {row('нашёл', data.source_label)}
-                {row('алгоритм', data.detector)}
-                {row('категория', data.category_label)}
-                {row('факт / норма', `${num(data.actual)} / ${num(data.expected)} (${num(data.deviation_pct, ' %')})`)}
-                {row('оценка', num(data.score))}
-                {data.is_mega && row('статус', 'мега-аномалия')}
-              </tbody>
-            </table>
-            {data.description && <p className="desc">{data.description}</p>}
-            {data.event && (
-              <div className="event">
-                <h4>
-                  {data.event.title} <span className="muted">· {data.event.category_label}, {data.event.date_label}</span>
-                </h4>
-                {data.event.description && <p>{data.event.description}</p>}
-                <a href={data.event.source_url} target="_blank" rel="noreferrer">
-                  источник
-                </a>
-              </div>
-            )}
-            <details>
-              <summary>ответ API (JSON)</summary>
-              <pre>{JSON.stringify(data, null, 2)}</pre>
-            </details>
-          </>
-        )}
-      </div>
+    <div className="detail-panel" role="region" aria-label="Выбранная аномалия">
+      {error && <ErrorState message={error} />}
+      {!data && !error && <Spinner />}
+      {data && (
+        <>
+          <div className="detail-head">
+            <h4>
+              <span className={`dot ${LEVEL_CLASSES[data.level]}`} aria-hidden /> {data.type_label}
+              {data.is_mega && <span className="mega">МЕГА</span>}
+            </h4>
+            <button className="close" onClick={onClose} aria-label="Закрыть">
+              ✕
+            </button>
+          </div>
+          <table className="kv">
+            <tbody>
+              {row('время', `${data.starts_label} — ${data.ends_label} (${data.duration_label})${data.days_ago ? `, ${daysAgo(data.days_ago)}` : ''}`)}
+              {row('уровень', <span className={LEVEL_CLASSES[data.level]}>{data.level_label}</span>)}
+              {row('датчик', `${data.sensor_name}`)}
+              {row('нашёл', data.source_label)}
+              {row('категория', data.category_label)}
+              {row('факт / норма', `${num(data.actual)} / ${num(data.expected)} (${num(data.deviation_pct, ' %')})`)}
+            </tbody>
+          </table>
+          {data.description && <p className="desc">{data.description}</p>}
+          <details>
+            <summary>ответ API (JSON)</summary>
+            <pre>{JSON.stringify(data, null, 2)}</pre>
+          </details>
+        </>
+      )}
     </div>
   )
 }

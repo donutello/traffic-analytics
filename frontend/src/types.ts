@@ -6,6 +6,22 @@ export const STATE_LABELS: Record<State, string> = { normal: 'норма', anoma
 export const GRANULARITY_LABELS: Record<Granularity, string> = { hour: 'час', day: 'день', week: 'неделя' }
 export const LEVEL_CLASSES: Record<Level, string> = { low: 'lv-low', medium: 'lv-medium', high: 'lv-high', critical: 'lv-critical' }
 
+/** Zoom ladder (issue #11, FR1): start at weeks, brush-select steps to days, then to hours. */
+export const ZOOM_ORDER: Granularity[] = ['week', 'day', 'hour']
+
+/** View window in /api/series and /api/anomalies `from`/`to` format (date or ISO 8601). */
+export interface TimeWindow {
+  from: string
+  to: string
+}
+
+const LONG_DATE = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Moscow' })
+
+/** '2025-03-08' or '2025-03-08T09:00:00+03:00' as «8 марта 2025». */
+export function longDate(iso: string): string {
+  return LONG_DATE.format(new Date(iso))
+}
+
 /** "N дней назад" with Russian agreement; the numbers come from the data, the grammar lives here. Empty for the last data day. */
 export function daysAgo(n: number): string {
   if (n === 0) return ''
