@@ -1,4 +1,4 @@
-"""The FastAPI app: the API the dashboard reads (issues #5 and #6).
+"""The FastAPI app: the API the dashboard reads (issues #5–#7).
 
     uv run uvicorn backend.main:app --reload
 
@@ -196,6 +196,16 @@ def anomaly_item(row: tuple, last_day: date | None) -> dict:
     }
 
 
+def overlaps(a: dict, b: dict) -> bool:
+    """Whether two anomaly items overlap in time ([starts_at, ends_at), so a bare touch
+    is not an overlap). Their contract times share format and offset: text order is time order."""
+    return a["starts_at"] < b["ends_at"] and b["starts_at"] < a["ends_at"]
+
+
+def percent_of(part: int, whole: int) -> float:
+    return round(100 * part / whole, 1) if whole else 0.0
+
+
 # ---------------------------------------------------------------- response models
 
 
@@ -293,6 +303,52 @@ class AnomalyCounts(BaseModel):
 class AnomalyListOut(BaseModel):
     counts: AnomalyCounts = Field(description="items in this response, by source")
     anomalies: list[AnomalyItem]
+
+
+class ComparisonPair(BaseModel):
+    ours: AnomalyItem
+    corporate: AnomalyItem
+
+
+class ComparisonTotals(BaseModel):
+    ours: int = Field(description="our findings whose interval touches the period")
+    corporate: int = Field(description="the corporate system's findings touching the period")
+    both: int = Field(description="matching pairs (one finding can make several pairs)")
+    only_ours: int = Field(description="our findings that no corporate finding overlaps")
+    only_corporate: int = Field(description="corporate findings that no finding of ours overlaps")
+
+
+class ComparisonShares(BaseModel):
+    ours_found_pct: float = Field(description="% of our findings the corporate system also found")
+    corporate_found_pct: float = Field(
+        description="% of the corporate findings our algorithm also found"
+    )
+
+
+class RoadComparison(BaseModel):
+    road: str
+    road_name: str
+    totals: ComparisonTotals = Field(description="counted from the three lists below")
+    shares: ComparisonShares
+    both_found: list[ComparisonPair] = Field(description="the matched findings side by side")
+    only_ours: list[AnomalyItem]
+    only_corporate: list[AnomalyItem]
+
+
+class ComparisonOut(BaseModel):
+    """FR4 (issue #7): where our logic and the corporate system agree and where they differ.
+
+    Matching rule: findings on the same sensor whose half-open intervals [starts_at, ends_at)
+    overlap match. The match is none-or-many, not one-to-one: a finding counts as mutually found
+    when ANY finding of the other side on its sensor overlaps it, and both_found then lists every
+    such pair.
+    """
+
+    roads: list[RoadComparison] = Field(
+        description="one comparison per road; every road when road= is empty"
+    )
+    totals: ComparisonTotals = Field(description="all roads together")
+    shares: ComparisonShares = Field(description="over all roads together")
 
 
 class RoadMeta(BaseModel):
@@ -469,6 +525,83 @@ def get_anomalies(
             "corporate": sum(1 for item in items if item["source"] == "corporate"),
         },
         "anomalies": items,
+    }
+
+
+@app.get("/api/comparison", response_model=ComparisonOut)
+def get_comparison(
+    db: Db,
+    road: str | None = None,
+    start: FromParam = None,
+    end: ToParam = None,
+) -> dict:
+    """FR4: our findings against the corporate system's over a period (issue #7)."""
+    conditions = ([("a.road = ?", road)] if road else []) + period_conditions(
+        parse_bound(start, False), parse_bound(end, True), "a"
+    )
+    where = " WHERE " + " AND ".join(sql for sql, _ in conditions) if conditions else ""
+    args = [value for _, value in conditions]
+    rows = db.execute(
+        ANOMALY_SELECT + where + " ORDER BY a.road, a.sensor_id, a.starts_at, a.id", args
+    ).fetchall()
+    last_day = data_last_day(db)
+    road_names = dict(
+        db.execute("SELECT road, road_name FROM sensors GROUP BY road, road_name").fetchall()
+    )
+
+    roads_in_order = dict.fromkeys(row[2] for row in rows)  # rows start with id, source, road
+    by_road = {code: {"ours": [], "corporate": []} for code in roads_in_order}
+    for row in rows:
+        by_road[row[2]][row[1]].append(anomaly_item(row, last_day))
+
+    roads_out = []
+    grand = dict(ours=0, corporate=0, both=0, only_ours=0, only_corporate=0)
+    found = dict(ours=0, corporate=0)
+    for code, by_source in by_road.items():
+        ours, corporate = by_source["ours"], by_source["corporate"]
+        corporate_by_sensor: dict[str, list[dict]] = {}
+        for c in corporate:
+            corporate_by_sensor.setdefault(c["sensor_id"], []).append(c)
+        pairs, matched_ours, matched_corporate = [], set(), set()
+        for a in ours:  # none-or-many: every overlapping pair goes into both_found
+            for c in corporate_by_sensor.get(a["sensor_id"], []):
+                if overlaps(a, c):
+                    pairs.append({"ours": a, "corporate": c})
+                    matched_ours.add(a["id"])
+                    matched_corporate.add(c["id"])
+        only_ours = [a for a in ours if a["id"] not in matched_ours]
+        only_corporate = [c for c in corporate if c["id"] not in matched_corporate]
+        totals = dict(
+            ours=len(ours),
+            corporate=len(corporate),
+            both=len(pairs),
+            only_ours=len(only_ours),
+            only_corporate=len(only_corporate),
+        )
+        roads_out.append(
+            {
+                "road": code,
+                "road_name": road_names.get(code, code),
+                "totals": totals,
+                "shares": {
+                    "ours_found_pct": percent_of(len(matched_ours), len(ours)),
+                    "corporate_found_pct": percent_of(len(matched_corporate), len(corporate)),
+                },
+                "both_found": pairs,
+                "only_ours": only_ours,
+                "only_corporate": only_corporate,
+            }
+        )
+        grand = {key: grand[key] + value for key, value in totals.items()}
+        found["ours"] += len(matched_ours)
+        found["corporate"] += len(matched_corporate)
+    return {
+        "roads": roads_out,
+        "totals": grand,
+        "shares": {
+            "ours_found_pct": percent_of(found["ours"], grand["ours"]),
+            "corporate_found_pct": percent_of(found["corporate"], grand["corporate"]),
+        },
     }
 
 
