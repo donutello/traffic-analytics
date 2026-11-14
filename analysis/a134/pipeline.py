@@ -1,9 +1,9 @@
 """Write the module's result to analysis/output/a134/ by the data contract (issue #27).
 
 The run is: parse the raw exports -> technical failures and gap filling (#24) ->
-traffic detectors (#25) -> manual review events and anomaly-event linking (#23) ->
-the corporate system's findings (#26). All five contract files come out of one
-command, `uv run python -m analysis.a134`.
+traffic detectors (#25) -> cross-channel confirmation promotion -> manual review
+events and anomaly-event linking (#23) -> the corporate system's findings (#26). All
+five contract files come out of one command, `uv run python -m analysis.a134`.
 """
 
 import csv
@@ -25,7 +25,7 @@ EVENT_KINDS = {
     "roadworks": {"volume_drop", "volume_spike", "profile_shift", "speed_drop", "congestion"},
     "weather": {"volume_drop", "congestion", "speed_drop", "profile_shift"},
     "holiday": {"volume_drop", "volume_spike", "profile_shift"},
-    "outage": {"missing_hours", "flatline", "zero_speed"},
+    "outage": {"missing_hours", "flatline", "zero_speed", "zero_telemetry"},
     "other": {"volume_drop", "volume_spike", "congestion", "profile_shift", "speed_drop"},
 }
 # only outage events are explained by technical findings; everything else needs a traffic one
@@ -134,7 +134,9 @@ def run(raw_dir: Path = parse.RAW_DIR, out_dir: Path = parse.OUTPUT_DIR) -> None
     filled = quality.fill_gaps(table, bad_hours, section_ids)
     traffic = detect.detect_traffic(filled, section_ids)
     monthly = detect.detect_monthly(filled, section_ids)
-    anomalies = detect.finalize(failures + traffic + monthly)
+    # volume and speed findings of one sensor that overlap in time confirm each
+    # other (+0.5 once each, contract table relevels them) before ids are handed out
+    anomalies = detect.finalize(failures + detect.promote_correlated(traffic + monthly))
 
     event_list = events.load_events()
     links = link_events(anomalies, event_list)

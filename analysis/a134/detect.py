@@ -17,12 +17,21 @@ import pandas as pd
 from .holidays import day_kind
 from .parse import ROAD
 
-# Detection thresholds, settled in issue #25; the README explains each one.
-HOURLY_Z, HOURLY_PCT = 3.0, 25.0  # an hour is off when modified-z and deviation agree
+# Detection thresholds, settled in issue #25 and re-settled with the smarter ports
+# (see the README credit section); the README explains each one.
+HOURLY_Z = 3.0  # an hour is off when the robust z and the practical magnitude agree
 HOURLY_MIN_RUN = 4  # hours of the same direction (drop or spike) to report one
-DROUGHT_Z, DROUGHT_PCT = -3.0, -25.0  # daily volume vs the norm of the month and kind
-SURGE_Z, SURGE_PCT = 3.0, 25.0
-SPIKE_PCT = 50.0  # these deviations alone are enough, no z-score needed
+PRACTICAL_HOUR_PCT, PRACTICAL_HOUR_ABS = 35.0, 50.0  # hourly volume: the deviation in
+PRACTICAL_DAILY_PCT, PRACTICAL_DAILY_ABS = 25.0, 100.0  # % of norm AND cars must reach
+DROUGHT_Z, SURGE_Z = -3.0, 3.0  # daily volume vs the norm of the month and kind
+SPEED_DROP_KMH = 15.0  # км/ч a direction's speed must fall under its hour norm
+SPEED_DROP_Z = 3.0  # ... and the robust z must agree (the %-based pass of #25 is gone)
+SPEED_DROP_MIN_RUN = 4  # hours in a row; 2 vs 4 was tuned on the real export (README)
+MAD_TO_SIGMA = 1.4826  # MAD to sigma for a normal distribution (modified z-score)
+RELATIVE_FLOOR = 0.10  # sigma is never below 10 % of the norm...
+FLOOR_VOLUME_HOUR = 20.0  # ... and never below these absolute floors: авт./ч hours,
+FLOOR_VOLUME_DAY = 100.0  # авт./сутки days, км/ч speed, % load (dilczech floors)
+FLOOR_SPEED, FLOOR_LOAD = 3.0, 2.0
 CONGESTION_SPEED = 50.0  # км/ч, below which the approach to Voronezh counts as congested
 CONGESTION_LOAD = 20.0  # %, lane occupancy confirming the congestion
 CONGESTION_MIN_HOURS = 2  # single slow hours are measurement noise, a queue is a run
@@ -34,13 +43,26 @@ YOY_MADT_PCT = 25.0  # % the monthly average daily volume may deviate from its n
 YOY_MIX_PP = 8.0  # percentage points the heavy-truck share may change
 YOY_SPEED = 15.0  # км/ч the mean monthly speed may drop
 LOAD_DEV_PCT = 20.0  # % the monthly median occupancy may drift from its calendar norm
+MONTH_VALIDITY = 95.0  # % real hours a month needs to be compared year over year at all
 MEGA_PCT = 60.0  # |deviation| of a traffic anomaly from which it is highlighted (FR3)
+
+REGIME_MIN_DAYS = 7  # consecutive complete days one side of the frozen norm (dilczech)
+REGIME_LOOKBACK_DAYS = 168  # how far back the frozen norm may reach
+REGIME_MIN_REFS = 6  # same-kind days the frozen norm needs
+REGIME_RATIO_LO, REGIME_RATIO_HI = 0.75, 1.25  # "one side of the norm" means 25 %+ here
+
+PROMOTE_STEP, PROMOTE_CAP = 0.5, 6.5  # volume+speed confirmation (dilczech promotion)
+PROMOTION_NOTE = "вторым каналом"  # its presence in a description marks a used bonus
+VOLUME_METRICS = frozenset({"volume", "volume_direct", "volume_reverse"})
+SPEED_METRICS = frozenset({"speed_direct", "speed_reverse"})
 
 SCORE_YOY_MADT_BASE = 3.5  # fixed rule weights for the monthly detectors (see README)
 SCORE_YOY_SPEED_BASE = 2.5
 SCORE_MIX_BASE = 2.0
 SCORE_LOAD_BASE = 2.0
 SCORE_MONTH_INTEGRITY = 3.0
+SCORE_REGIME_BASE = 3.5  # regime starts at the high band and grows 0.1 per % beyond 25
+SCORE_REGIME_CAP = 6.5
 SCORE_PROFILE = 2.5
 SCORE_CONGESTION = 4.5
 
@@ -94,15 +116,30 @@ def anomaly(
     }
 
 
-def _mad(series: pd.Series, fallback: float = 1.0) -> float:
-    """Median absolute deviation with the fallbacks of the ported analyzer."""
-    median = float(series.median())
-    mad = float((series - median).abs().median())
+def _center_and_mad(values: pd.Series) -> tuple[float, float]:
+    """Median and MAD of one group of values; MAD 0 everywhere gives MAD 0, the floor
+    (never a collapse to a hair-width sigma) is what keeps quiet hours quiet."""
+    median = float(values.median())
+    if np.isnan(median):
+        return np.nan, 0.0
+    mad = float((values - median).abs().median())
     if not (mad > 0) or np.isnan(mad):
-        mad = float(series.std())
-    if not (mad > 0) or np.isnan(mad):
-        return fallback
-    return mad
+        mad = 0.0
+    return median, mad
+
+
+def _sigma(median: float, mad: float, floor: float) -> float:
+    """The floored robust scale of dilczech's baseline: sigma = max(1.4826*MAD,
+    10 % of the norm, floor). The z thresholds of #25 keep their meaning on it."""
+    return max(MAD_TO_SIGMA * mad, abs(median) * RELATIVE_FLOOR, floor)
+
+
+def _floor_for(metric: str) -> float:
+    if metric.startswith("speed"):
+        return FLOOR_SPEED
+    if metric.startswith("load"):
+        return FLOOR_LOAD
+    return FLOOR_VOLUME_HOUR
 
 
 def _kind_and_month(df: pd.DataFrame) -> pd.DataFrame:
@@ -125,27 +162,42 @@ def _hourly_detector(
 
     A daily sum hides an accident: twelve hours cut in half still leave a day that
     looks normal. So every hour is compared with the median of the very same hour on
-    the same kind of days of the same calendar month (pooled over the years), and
-    >= HOURLY_MIN_RUN deviant hours in a row become one anomaly with the exact
-    interval. Works for volume and for speed, which is why weather waves show up.
+    the same kind of days of the same calendar month (pooled over the years), and an
+    hour counts as deviant only when BOTH the modified z against the floored robust
+    scale and the practical magnitude test pass: |actual - norm| must reach
+    max(35 % of the norm, 50 авт./ч) (dilczech's AND, which replaces the old flat
+    25 % rule — night hours stopped firing on wobbles of a few cars). >= HOURLY_MIN_RUN
+    deviant hours in a row become one anomaly with the exact interval. Runs over the
+    total volume and over each direction separately.
     """
     found: list[dict] = []
+    floor = _floor_for(metric)
     for (_month, _kind), group in work.groupby(["month", "day_type"]):
         if len(group["date"].unique()) < 4:
             continue
-        stats = group.groupby("hour")[metric].agg(["median", _mad])
-        stats.columns = ["median", "mad"]
+        stats = pd.DataFrame(
+            {hour: _center_and_mad(values) for hour, values in group.groupby("hour")[metric]},
+            index=["median", "mad"],
+        ).T
+        stats["sigma"] = [
+            _sigma(median, mad, floor)
+            for median, mad in zip(stats["median"], stats["mad"], strict=True)
+        ]
         stats = stats[stats["median"].notna()]
+        if stats.empty:
+            continue
 
         marked = group.copy()
         med = marked["hour"].map(stats["median"])
-        mad = marked["hour"].map(stats["mad"])
-        marked = marked[med.notna() & (mad > 0)]
-        med, mad = marked["hour"].map(stats["median"]), marked["hour"].map(stats["mad"])
-        marked["z"] = 0.6745 * (marked[metric] - med) / mad
-        marked["dev"] = np.where(med > 0, (marked[metric] - med) / med * 100, 0.0)
-        drop = (marked["z"] <= -HOURLY_Z) & (marked["dev"] <= -HOURLY_PCT)
-        spike = (marked["z"] >= HOURLY_Z) & (marked["dev"] >= HOURLY_PCT)
+        sigma = marked["hour"].map(stats["sigma"])
+        marked = marked[med.notna() & sigma.notna()]
+        med, sigma = marked["hour"].map(stats["median"]), marked["hour"].map(stats["sigma"])
+        marked["z"] = (marked[metric] - med) / sigma
+        marked["residual"] = marked[metric] - med
+        marked["dev"] = np.where(med > 0, marked["residual"] / med * 100, 0.0)
+        bar = np.maximum(np.abs(med) * PRACTICAL_HOUR_PCT / 100.0, PRACTICAL_HOUR_ABS)
+        drop = (marked["z"] <= -HOURLY_Z) & (marked["residual"] <= -bar)
+        spike = (marked["z"] >= HOURLY_Z) & (marked["residual"] >= bar)
         marked["flag"] = np.where(drop, -1, np.where(spike, 1, 0))
 
         marked = marked.sort_values("ts")
@@ -183,21 +235,104 @@ def _hourly_detector(
     return found
 
 
+def _speed_drop_runs(
+    work: pd.DataFrame, sensor_id: str, speed_metric: str, volume_metric: str, where: str
+) -> list[dict]:
+    """One direction's speed against its own hour norm, measured in км/ч (dilczech).
+
+    The old %-based speed pass is gone. Norms are built only from hours where this
+    direction really counted cars (an empty hour logs a meaningless speed), and an
+    hour is flagged only when its own direction is moving too, the speed lies at
+    SPEED_DROP_KMH км/ч or more under the norm, and the robust z agrees. >=
+    SPEED_DROP_MIN_RUN such hours in a row become one anomaly.
+    """
+    found: list[dict] = []
+    for (_month, _kind), group in work.groupby(["month", "day_type"]):
+        reference = group[group[volume_metric] > 0]
+        if reference["date"].nunique() < 4:
+            continue
+        stats = pd.DataFrame(
+            {
+                hour: _center_and_mad(values)
+                for hour, values in reference.groupby("hour")[speed_metric]
+            },
+            index=["median", "mad"],
+        ).T
+        stats["sigma"] = [
+            _sigma(median, mad, FLOOR_SPEED)
+            for median, mad in zip(stats["median"], stats["mad"], strict=True)
+        ]
+        stats = stats[stats["median"].notna()]
+        if stats.empty:
+            continue
+
+        marked = group[group[volume_metric] > 0].copy()
+        med = marked["hour"].map(stats["median"])
+        sigma = marked["hour"].map(stats["sigma"])
+        marked = marked[med.notna() & sigma.notna()]
+        med, sigma = marked["hour"].map(stats["median"]), marked["hour"].map(stats["sigma"])
+        marked["gap"] = marked[speed_metric] - med
+        marked["z"] = marked["gap"] / sigma
+        flagged = marked[(marked["gap"] <= -SPEED_DROP_KMH) & (marked["z"] <= -SPEED_DROP_Z)]
+        flagged = flagged.sort_values("ts")
+        if flagged.empty:
+            continue
+        gaps = flagged["ts"].diff() != pd.Timedelta(hours=1)
+        for _, run in flagged.groupby(gaps.cumsum()):
+            if len(run) < SPEED_DROP_MIN_RUN:
+                continue
+            start, end = run["ts"].iloc[0], run["ts"].iloc[-1] + pd.Timedelta(hours=1)
+            actual = float(run[speed_metric].mean())
+            expected = float(run["hour"].map(stats["median"]).mean())
+            dev = (actual - expected) / expected * 100 if expected > 0 else 0.0
+            score = min(float(run["z"].abs().max()), 9.9)
+            found.append(
+                anomaly(
+                    sensor_id,
+                    start,
+                    end,
+                    "traffic",
+                    "speed_drop",
+                    "amplitude",
+                    level_from_score(score),
+                    speed_metric,
+                    actual,
+                    expected,
+                    dev,
+                    score,
+                    f"Скорость {where} держится ниже нормы на {abs(actual - expected):.0f} "
+                    f"км/ч в течение {len(run)} часов подряд (с {start:%H:%M}, "
+                    f"|z| = {score:.1f})",
+                )
+            )
+    return found
+
+
 def _daily_amplitude(work: pd.DataFrame, sensor_id: str) -> list[dict]:
-    """Whole days versus the median of the same calendar month and kind of day."""
+    """Whole days versus the median of the same calendar month and kind of day.
+
+    The old rule's ±50 %-alone trigger (a flat percent with no reference to any
+    scale) is replaced by the practical-magnitude AND, as in the hourly pass: z and
+    a deviation of max(25 % of the norm, 100 авт./сутки) must agree. The floored
+    scale is now what keeps a calm month's tight MAD from inflating z, not the
+    percent rule."""
     found: list[dict] = []
     daily = work.groupby(["month", "day_type", "date"])["volume"].sum().reset_index()
     for (_month, _kind), group in daily.groupby(["month", "day_type"]):
         if len(group) < 4:
             continue
-        median = float(group["volume"].median())
-        mad = _mad(group["volume"])
+        median, mad = _center_and_mad(group["volume"])
+        if np.isnan(median):
+            continue
+        sigma = _sigma(median, mad, FLOOR_VOLUME_DAY)
+        bar = max(abs(median) * PRACTICAL_DAILY_PCT / 100.0, PRACTICAL_DAILY_ABS)
         for day, volume in zip(group["date"], group["volume"], strict=True):
-            z = 0.6745 * (volume - median) / mad
-            dev = (volume - median) / median * 100 if median > 0 else 0.0
+            residual = volume - median
+            z = residual / sigma
+            dev = residual / median * 100 if median > 0 else 0.0
             day_ts = pd.Timestamp(day, tz=work["ts"].iloc[0].tzinfo)
-            drop = (z < DROUGHT_Z and dev <= DROUGHT_PCT) or dev <= -SPIKE_PCT
-            surge = (z > SURGE_Z and dev >= SURGE_PCT) or dev >= SPIKE_PCT
+            drop = z <= DROUGHT_Z and residual <= -bar
+            surge = z >= SURGE_Z and residual >= bar
             if not (drop or surge):
                 continue
             type_ = "volume_spike" if surge else "volume_drop"
@@ -301,6 +436,116 @@ def _profiles(work: pd.DataFrame, sensor_id: str) -> list[dict]:
     return found
 
 
+def _regime_changes(days: pd.DataFrame, sensor_id: str) -> list[dict]:
+    """Sustained one-sided shifts of daily volume (dilczech's detect_regime_changes).
+
+    An amplitude detector compares a day with a norm that contains the recent weeks,
+    so a new steady level absorbs itself: after a few weeks everything is normal
+    again and the change is never told. Here the norm is FROZEN: for a window of
+    REGIME_MIN_DAYS consecutive complete days the norm of every day is the median of
+    the same-kind days strictly before the window (within REGIME_LOOKBACK_DAYS, at
+    least REGIME_MIN_REFS of them). The window fires when every day lies below 0.75
+    (or above 1.25) of its frozen norm; overlapping follow-on windows are skipped, so
+    one report per regime window. Days and volumes come from complete non-imputed
+    days only (the caller filters them)."""
+    found: list[dict] = []
+    if days.empty:
+        return found
+    tz = days["ts"].iloc[0].tzinfo
+    daily = days.groupby("date")["volume"].sum()
+    daily.index = pd.DatetimeIndex(pd.to_datetime(daily.index))
+    daily = daily.sort_index()
+    kinds = pd.Series([day_kind(ts) for ts in daily.index], index=daily.index)
+    last_end: pd.Timestamp | None = None
+    for first in daily.index:
+        if last_end is not None and first <= last_end:
+            continue
+        window = pd.DatetimeIndex([first + pd.Timedelta(days=k) for k in range(REGIME_MIN_DAYS)])
+        if not window.isin(daily.index).all():  # a window day missing from the export
+            continue
+        window_kinds = kinds.loc[window]
+        before = daily[
+            (daily.index < first) & (daily.index >= first - pd.Timedelta(days=REGIME_LOOKBACK_DAYS))
+        ]
+        ref_kinds = kinds.loc[before.index]
+        norms: dict[str, float] = {}
+        skip = False
+        for kind in window_kinds.unique():
+            refs = before[ref_kinds == kind]
+            if len(refs) < REGIME_MIN_REFS:
+                skip = True
+                break
+            median, _ = _center_and_mad(refs)
+            if not (median > 0):
+                skip = True
+                break
+            norms[kind] = median
+        if skip:
+            continue
+        norm_series = window_kinds.map(norms)
+        ratios = daily.loc[window].to_numpy() / norm_series.to_numpy()
+        drop, spike = bool((ratios < REGIME_RATIO_LO).all()), bool((ratios > REGIME_RATIO_HI).all())
+        if not (drop or spike):
+            continue
+        last_end = window[-1]
+        mean_volume = float(daily.loc[window].mean())
+        mean_norm = float(norm_series.mean())
+        dev = (mean_volume - mean_norm) / mean_norm * 100
+        score = min(SCORE_REGIME_BASE + (abs(dev) - 25.0) * 0.1, SCORE_REGIME_CAP)
+        type_ = "volume_spike" if spike else "volume_drop"
+        start = first.tz_localize(tz)
+        found.append(
+            anomaly(
+                sensor_id,
+                start,
+                (window[-1] + pd.Timedelta(days=1)).tz_localize(tz),  # half-open: +24 h
+                "traffic",
+                type_,
+                "regime",
+                level_from_score(score),
+                "volume",
+                mean_volume,
+                mean_norm,
+                dev,
+                score,
+                f"Поток держится {'выше' if spike else 'ниже'} прежней нормы на "
+                f"{abs(dev):.0f}% {REGIME_MIN_DAYS} дней подряд (с {first:%d.%m})",
+            )
+        )
+    return found
+
+
+def _promote(item: dict, other_channel: str) -> None:
+    """One confirmation bonus per finding, never past the top of the band."""
+    if PROMOTION_NOTE in (item["description"] or "") or item["score"] >= PROMOTE_CAP:
+        return
+    item["score"] = round(min(item["score"] + PROMOTE_STEP, PROMOTE_CAP), 1)
+    item["level"] = level_from_score(item["score"])
+    item["description"] += f" Находка подтверждена вторым каналом ({other_channel})."
+
+
+def promote_correlated(anomalies: list[dict]) -> list[dict]:
+    """Volume and speed findings of one sensor that overlap in time confirm each
+    other (dilczech's promotion): each side of a confirmed pair gets its score up by
+    PROMOTE_STEP (capped at PROMOTE_CAP, level recomputed through the one contract
+    table) and a sentence in the description. A finding is promoted at most once —
+    the marker sentence shows it — and findings already at or above the cap of 6.5
+    are left alone."""
+    traffic = [a for a in anomalies if a["category"] == "traffic" and a["score"] is not None]
+    volume = [a for a in traffic if a["metric"] in VOLUME_METRICS]
+    speed = [a for a in traffic if a["metric"] in SPEED_METRICS]
+    for v in volume:
+        for s in speed:
+            if v["sensor_id"] != s["sensor_id"]:
+                continue
+            if pd.Timestamp(v["starts_at"]) < pd.Timestamp(s["ends_at"]) and pd.Timestamp(
+                s["starts_at"]
+            ) < pd.Timestamp(v["ends_at"]):
+                _promote(v, "скорость")
+                _promote(s, "поток")
+    return anomalies
+
+
 def detect_traffic(filled: pd.DataFrame, sensor_ids: dict[str, str]) -> list[dict]:
     """Traffic detectors on the gap-filled series.
 
@@ -318,20 +563,39 @@ def detect_traffic(filled: pd.DataFrame, sensor_ids: dict[str, str]) -> list[dic
             sec_df, sensor_id, "volume", "volume_drop", "volume_spike", "Поток"
         )
         found += _hourly_detector(
-            sec_df, sensor_id, "speed_direct", "speed_drop", "speed_spike", "Скорость"
+            sec_df,
+            sensor_id,
+            "volume_direct",
+            "volume_drop",
+            "volume_spike",
+            "Поток (на Воронеж)",
+        )
+        found += _hourly_detector(
+            sec_df,
+            sensor_id,
+            "volume_reverse",
+            "volume_drop",
+            "volume_spike",
+            "Поток (из Воронежа)",
+        )
+        found += _speed_drop_runs(sec_df, sensor_id, "speed_direct", "volume_direct", "на Воронеж")
+        found += _speed_drop_runs(
+            sec_df, sensor_id, "speed_reverse", "volume_reverse", "из Воронежа"
         )
         found += _congestion(sec_df, sensor_id)
     for section, sec_df in days.groupby("section"):
         sensor_id = sensor_ids[section]
         found += _daily_amplitude(sec_df, sensor_id)
         found += _profiles(sec_df, sensor_id)
+        found += _regime_changes(sec_df, sensor_id)
     return found
 
 
 def detect_monthly(filled: pd.DataFrame, sensor_ids: dict[str, str]) -> list[dict]:
     """Year-over-year monthly detectors: a month is judged against the same calendar
-    month of the other years. Scores are fixed rule weights (see the README), levels
-    come from the contract table like everywhere else."""
+    month of the other years, among months that are at least MONTH_VALIDITY % real on
+    both sides of the comparison; scores are fixed rule weights (see the README),
+    levels come from the contract table like everywhere else."""
     found: list[dict] = []
     work = filled.copy()
     work["month_key"] = work["ts"].dt.tz_localize(None).dt.to_period("M")
@@ -345,12 +609,26 @@ def detect_monthly(filled: pd.DataFrame, sensor_ids: dict[str, str]) -> list[dic
             daily = month_df[~month_df["lost"]].groupby(month_df["ts"].dt.date)["volume"].sum()
             volume = month_df[~month_df["lost"]]["volume"].sum()
             real_hours = month_df[~month_df["lost"]]
+            # the month's speed is the flow-weighted mean (dilczech): a half-empty
+            # night hour must not outvote a full evening hour the way a plain mean
+            # lets it, and hours whose direction counted nothing carry no speed
+            moving = real_hours[
+                real_hours["speed_direct"].notna() & (real_hours["volume_direct"] > 0)
+            ]
+            speed = (
+                float(
+                    (moving["speed_direct"] * moving["volume_direct"]).sum()
+                    / moving["volume_direct"].sum()
+                )
+                if len(moving) > 0
+                else np.nan
+            )
             stats.append(
                 {
                     "month_key": month_key,
                     "completeness": (1 - month_df["lost"].mean()) * 100,
                     "madt": daily.mean() if len(daily) > 0 else np.nan,
-                    "speed": real_hours["speed_direct"].mean(),
+                    "speed": speed,
                     "load": real_hours["load_direct"].median(),
                     "heavy_share": month_df["heavy"].sum() / volume * 100 if volume > 0 else np.nan,
                 }
@@ -359,13 +637,11 @@ def detect_monthly(filled: pd.DataFrame, sensor_ids: dict[str, str]) -> list[dic
         stats_df["cal_month"] = [p.month for p in stats_df["month_key"]]
 
         for _cal_month, group in stats_df.groupby("cal_month"):
-            if len(group) < 2:
-                continue
-            med_madt = group["madt"].median()
-            med_speed = group["speed"].median()
-            med_load = group["load"].median()
-            med_heavy = group["heavy_share"].median()
-
+            # A month compares year over year only itself valid (dilczech's gate too):
+            # months with a hole in them must enter neither the comparison nor its
+            # peer norm. The peer median is taken over the OTHER years only — the
+            # compared month must not be its own anchor.
+            usable = group[group["completeness"] >= MONTH_VALIDITY]
             for row in group.itertuples():
                 start = row.month_key.start_time.tz_localize(filled["ts"].dt.tz)
                 end = (row.month_key + 1).start_time.tz_localize(filled["ts"].dt.tz)
@@ -392,6 +668,16 @@ def detect_monthly(filled: pd.DataFrame, sensor_ids: dict[str, str]) -> list[dic
                     # the month belongs to the technical story; its year-over-year
                     # comparisons would only re-tell the missing hours as traffic
                     continue
+                if row.completeness < MONTH_VALIDITY:
+                    continue
+
+                peers = usable[usable["month_key"] != row.month_key]
+                if peers.empty:
+                    continue
+                med_madt = float(peers["madt"].dropna().median())
+                med_speed = float(peers["speed"].dropna().median())
+                med_load = float(peers["load"].dropna().median())
+                med_heavy = float(peers["heavy_share"].dropna().median())
 
                 if pd.notna(row.madt) and med_madt > 0:
                     dev = (row.madt - med_madt) / med_madt * 100
