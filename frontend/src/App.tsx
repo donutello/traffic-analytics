@@ -2,10 +2,12 @@ import { useState } from 'react'
 import AnomalyList, { CountChips } from './AnomalyList'
 import { get, urls } from './api'
 import Chart from './Chart'
-import DetailOverlay from './Detail'
-import MapSection from './Map'
+import DetailPanel from './Detail'
+import Placeholder from './Placeholder'
+import { EmptyState, ErrorState, Spinner } from './States'
+import { THEME_KEY, applyTheme, type Theme } from './theme'
 import { useAsync } from './useAsync'
-import { GRANULARITY_LABELS, type Granularity, type Meta, type Period, type SensorAnomalies, type SensorMap, type Series } from './types'
+import { GRANULARITY_LABELS, longDate, ZOOM_ORDER, type AnomalyItem, type Granularity, type Meta, type Point, type SensorAnomalies, type SensorMap, type Series, type TimeWindow } from './types'
 
 type Tab = 'overview' | 'map' | 'compare'
 
@@ -16,38 +18,76 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 const NONE: Promise<null> = Promise.resolve(null)
+const NO_POINTS: Point[] = []
+const NO_ANOMALIES: AnomalyItem[] = []
+
+/** Code of the fictional sample road in /api/meta; every other road is real project data. Names are still taken from the API, never from here. */
+const SAMPLE_ROAD = '_example'
 
 export default function App() {
-  const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
+  const [theme, setTheme] = useState<Theme>(() => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'))
   const [tab, setTab] = useState<Tab>('overview')
   const [road, setRoad] = useState('')
-  const [periodEdit, setPeriodEdit] = useState<Period | null>(null)
   const [sensorPick, setSensorPick] = useState<string | null>(null)
-  const [granularity, setGranularity] = useState<Granularity>('hour')
+  const [level, setLevel] = useState<Granularity>('week')
+  const [view, setView] = useState<TimeWindow | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
 
   const meta = useAsync(get<Meta>(urls.meta()), [])
-  const roadCode = road || (meta.data?.roads[0].code ?? '')
-  const period = periodEdit ?? meta.data?.period
+  const roads = meta.data?.roads ?? []
+  // Default the first real road: the sample is fictional and would mislead on first open.
+  const roadCode = road || (roads.find((r) => r.code !== SAMPLE_ROAD) ?? roads[0])?.code || ''
+  const period = meta.data?.period
   const sensors = useAsync(meta.data ? get<SensorMap>(urls.sensors(roadCode, period?.from ?? '', period?.to ?? '')) : NONE, [meta.data, roadCode, period?.from, period?.to])
-  // First sensor by default; a picked one wins if it exists in the loaded road. Same for road and period: state only stores edits.
+  // First sensor by default; a picked one wins if it exists in the loaded road. State only stores edits.
   const sensor = sensors.data?.features.some((f) => f.properties.id === sensorPick) ? sensorPick : (sensors.data?.features[0]?.properties.id ?? null)
 
-  const series = useAsync(sensor ? get<Series>(urls.series(sensor, period?.from ?? '', period?.to ?? '', granularity)) : NONE, [sensor, period?.from, period?.to, granularity])
-  const anomalies = useAsync(sensor ? get<SensorAnomalies>(urls.anomalies(sensor, period?.from ?? '', period?.to ?? '')) : NONE, [sensor, period?.from, period?.to])
+  const span = view ?? (period ? { from: period.from, to: period.to } : null)
+  const series = useAsync(sensor && span ? get<Series>(urls.series(sensor, span.from, span.to, level)) : NONE, [sensor, span?.from, span?.to, level])
+  const anomalies = useAsync(sensor && span ? get<SensorAnomalies>(urls.anomalies(sensor, span.from, span.to)) : NONE, [sensor, span?.from, span?.to])
   const sensorName = sensors.data?.features.find((f) => f.properties.id === sensor)?.properties.name ?? ''
 
   const toggleTheme = () => {
-    setDark((d) => {
-      document.documentElement.dataset.theme = d ? 'light' : 'dark'
-      return !d
-    })
+    const next = theme === 'dark' ? 'light' : 'dark'
+    applyTheme(next)
+    localStorage.setItem(THEME_KEY, next)
+    setTheme(next)
+  }
+  const changeRoad = (code: string) => {
+    setRoad(code)
+    setSensorPick(null)
+    setLevel('week')
+    setView(null)
+    setDetailId(null)
+  }
+  const drillDown = (fromTs: string, toTs: string) => {
+    const next = ZOOM_ORDER[ZOOM_ORDER.indexOf(level) + 1]
+    if (!next) return // hour is the finest stored level: finer selection just zooms the loaded window
+    setView({ from: fromTs, to: toTs })
+    setLevel(next)
+    setDetailId(null)
+  }
+  const resetView = () => {
+    setLevel('week')
+    setView(null)
+    setDetailId(null)
   }
 
-  if (meta.error) return <main className="boot">Сервер недоступен: {meta.error}</main>
-  if (!meta.data || !period || !sensors.data) return <main className="boot">Загрузка…</main>
+  if (meta.error)
+    return (
+      <main className="boot">
+        <ErrorState message={`Сервер недоступен. ${meta.error}`} />
+      </main>
+    )
+  if (!meta.data || !period)
+    return (
+      <main className="boot">
+        <Spinner label="Загрузка данных о дорогах…" />
+      </main>
+    )
 
-  const features = sensors.data.features
+  const features = sensors.data?.features ?? []
+  const points = series.data?.points ?? NO_POINTS
 
   return (
     <main className="app">
@@ -55,32 +95,18 @@ export default function App() {
         <div>
           <h1>Аномалии трафика</h1>
           <p className="muted">
-            Прототип панели на тестовых данных <code>analysis/output/_example</code>
+            Данные с {longDate(period.from)} по {longDate(period.to)}
           </p>
         </div>
-        {meta.data.roads.length > 1 ? (
-          <select id="road" name="road" value={roadCode} onChange={(e) => setRoad(e.target.value)} aria-label="Дорога">
-            {meta.data.roads.map((r) => (
-              <option key={r.code} value={r.code}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className="road-name">{meta.data.roads[0].name}</span>
-        )}
-        <div className="period">
-          <label htmlFor="date-from">
-            с{' '}
-            <input id="date-from" type="date" min={meta.data.period.from} max={meta.data.period.to} value={period.from} onChange={(e) => setPeriodEdit({ ...period, from: e.target.value })} />
-          </label>
-          <label htmlFor="date-to">
-            по{' '}
-            <input id="date-to" type="date" min={meta.data.period.from} max={meta.data.period.to} value={period.to} onChange={(e) => setPeriodEdit({ ...period, to: e.target.value })} />
-          </label>
-        </div>
+        <select id="road" name="road" value={roadCode} onChange={(e) => changeRoad(e.target.value)} aria-label="Дорога">
+          {roads.map((r) => (
+            <option key={r.code} value={r.code}>
+              {r.name}
+            </option>
+          ))}
+        </select>
         <button onClick={toggleTheme} aria-label="Переключить тему">
-          {dark ? 'Светлая тема' : 'Тёмная тема'}
+          {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
         </button>
       </header>
 
@@ -95,50 +121,108 @@ export default function App() {
       {tab === 'overview' && (
         <section className="board">
           <div className="card filters">
-            <select id="sensor" name="sensor" value={sensor ?? ''} onChange={(e) => setSensorPick(e.target.value)} aria-label="Датчик">
+            <select
+              id="sensor"
+              name="sensor"
+              value={sensor ?? ''}
+              onChange={(e) => {
+                setSensorPick(e.target.value)
+                setDetailId(null)
+              }}
+              aria-label="Датчик"
+            >
               {features.map((f) => (
                 <option key={f.properties.id} value={f.properties.id}>
-                  Датчик {f.properties.name}
+                  {f.properties.name}
                 </option>
               ))}
             </select>
-            <div className="seg">
-              {(Object.keys(GRANULARITY_LABELS) as Granularity[]).map((g) => (
-                <button key={g} aria-pressed={granularity === g} onClick={() => setGranularity(g)}>
+            <div className="seg" role="group" aria-label="Детализация">
+              {ZOOM_ORDER.map((g) => (
+                <button
+                  key={g}
+                  aria-pressed={level === g}
+                  onClick={() => {
+                    setLevel(g)
+                    setDetailId(null)
+                  }}
+                >
                   {GRANULARITY_LABELS[g]}
                 </button>
               ))}
             </div>
+            {view && (
+              <>
+                <span className="window-chip muted">
+                  {longDate(view.from)} — {longDate(view.to)}
+                </span>
+                <button onClick={resetView}>к началу периода</button>
+              </>
+            )}
           </div>
-          {series.error ? <div className="card chart-card">Данные не загрузились: {series.error}</div> : series.data ? <Chart points={series.data.points} name={sensorName} dark={dark} /> : <div className="card chart-card">Загрузка…</div>}
+
+          {sensors.error && (
+            <div className="card chart-card">
+              <ErrorState message={sensors.error} />
+            </div>
+          )}
+          {!sensors.data && !sensors.error && (
+            <div className="card chart-card">
+              <Spinner />
+            </div>
+          )}
+          {sensors.data && features.length === 0 && (
+            <div className="card chart-card">
+              <EmptyState message="На этой дороге нет датчиков." />
+            </div>
+          )}
+          {sensor && series.error && (
+            <div className="card chart-card">
+              <ErrorState message={series.error} />
+            </div>
+          )}
+          {sensor && !series.data && !series.error && (
+            <div className="card chart-card">
+              <Spinner />
+            </div>
+          )}
+          {sensor && series.data && points.length === 0 && (
+            <div className="card chart-card">
+              <EmptyState message="За выбранный период у датчика нет измерений." />
+            </div>
+          )}
+          {sensor && series.data && points.length > 0 && <Chart points={points} anomalies={anomalies.data?.anomalies ?? NO_ANOMALIES} level={level} dark={theme === 'dark'} name={sensorName} onZoom={drillDown} onAnomalyClick={setDetailId} />}
+
           <aside className="card side">
             <h3>Аномалии датчика</h3>
-            <CountChips counts={anomalies.data?.counts ?? { ours: 0, corporate: 0 }} />
-            {anomalies.data && <AnomalyList data={anomalies.data} onSelect={setDetailId} />}
-            <button className="map-link" onClick={() => setTab('map')}>
-              посмотреть на карте →
-            </button>
+            {sensors.error ? (
+              <ErrorState message={sensors.error} />
+            ) : !sensor ? (
+              sensors.data ? (
+                <EmptyState message="На этой дороге нет датчиков." />
+              ) : (
+                <Spinner />
+              )
+            ) : (
+              <>
+                {detailId && <DetailPanel id={detailId} onClose={() => setDetailId(null)} />}
+                {anomalies.error && <ErrorState message={anomalies.error} />}
+                {!anomalies.data && !anomalies.error && <Spinner label="Загрузка аномалий…" />}
+                {anomalies.data && (
+                  <>
+                    <CountChips counts={anomalies.data.counts} />
+                    {anomalies.data.anomalies.length === 0 ? <p className="muted small">За выбранный период аномалий нет.</p> : <AnomalyList data={anomalies.data} onSelect={setDetailId} />}
+                  </>
+                )}
+              </>
+            )}
           </aside>
         </section>
       )}
 
-      {tab === 'map' && <MapSection features={features} sensor={sensor} setSensor={setSensorPick} focus={sensorPick} anomalies={anomalies.data} openDetail={setDetailId} dark={dark} />}
+      {tab === 'map' && <Placeholder title="Карта аномалий" text="Точки датчиков на OpenStreetMap, подсветка мега-аномалий и панель подробностей по клику." issue={12} />}
 
-      {tab === 'compare' && (
-        <section className="compare">
-          <div className="card">
-            <h3>Наш алгоритм против корпоративной системы</h3>
-            <p>
-              Совпадения, только наши и только корпоративные аномалии по каждому датчику появятся, когда будет готов API сравнения (issue{' '}
-              <a href="https://github.com/donutello/traffic-analytics/issues/7">#7</a>).
-            </p>
-            <p className="muted">Числа счётчиков в панели датчика уже разделены по источникам: «нашли мы» и «корпоративная система».</p>
-            <span className="mega">в разработке</span>
-          </div>
-        </section>
-      )}
-
-      {detailId && <DetailOverlay id={detailId} onClose={() => setDetailId(null)} />}
+      {tab === 'compare' && <Placeholder title="Сравнение алгоритмов" text="Где наш алгоритм и корпоративная система находят одно и то же, где расходятся и насколько новый подход лучше (FR4)." issue={13} />}
     </main>
   )
 }
