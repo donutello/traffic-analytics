@@ -1,6 +1,6 @@
 # Data contract
 
-> **Status: draft v0.** This is a starting point, ported from an earlier draft. The contract owners confirm or change it in issue #1, and then it becomes v1.
+> **Status: v1 (confirmed 2026-11-14).** The contract owners (@technostd and the four analysts) confirmed the draft in issue #1. The file format stands as it was; the meaning of `score`, `level` and `is_mega` is now a rule (see [Severity](#severity-score-level-and-is_mega)), and the document now says how every API endpoint is built from these files.
 
 The contract describes the files a road module writes to `analysis/output/<road>/`. The backend imports these files into the database, and the dashboard only reads the database. The modules, the backend and the frontend depend only on this format, not on each other. Why it works this way: [ADR 0004](adr/0004-data-flow-through-files.md) and [ADR 0006](adr/0006-data-contract-as-pydantic-models.md).
 
@@ -32,6 +32,17 @@ The check looks at each file and at the links between files: the sensors in `ser
 | `corporate_anomalies.json` | no | anomalies found by the customer's corporate system |
 
 No other files are allowed in a road directory: otherwise a typo in a file name would go unnoticed.
+
+## What the API builds from these files
+
+The backend imports the files into the database (issue #4) and keeps everything in them, so each endpoint of issues #5–#7 is one query. These notes are the check that the contract is enough; the prototype responses in [`frontend/public/mock/`](../frontend/public/mock/) (generated from the `_example` set) show the same shapes.
+
+- `GET /api/series?sensor=&from=&to=&granularity=hour|day|week` (#5): `hour` gets one point per `series.csv` line of that sensor (`ts`, `volume`, `state`). `day` and `week` sum the hours of each group; the state of a group is `anomaly` if a `traffic` anomaly of the same sensor in `anomalies.json` covers any of its hours (`sensor_id` + interval), else `imputed` if any line of the group is `imputed`, else `normal`.
+- `GET /api/sensors?road=&from=&to=` (#6): one GeoJSON Feature per sensor of `sensors.json` (`id`, `name`, `road`, `km`, coordinates, `directions`). `anomaly_count` is the number of ours and corporate anomalies of that sensor whose interval touches the period; `is_mega` is whether any of the sensor's anomalies has `is_mega` set.
+- `GET /api/anomalies?road=&sensor=&from=&to=&type=&source=&level=` (#6): the items of `anomalies.json` with `source: "ours"` plus the items of `corporate_anomalies.json` with `source: "corporate"` — `source` is which file the anomaly stands in, not a field of the file. The period filter is interval overlap; `sensor_name` for the list comes from `sensors.json`.
+- `GET /api/anomalies/{id}` (#6): the anomaly's own fields (time, `deviation_pct`, `actual`, `expected`), the sensor's `name`, and when `event_id` is set the event from `events.json` with its `description` and `source_url`, so the side panel can show the cause and its link.
+- `GET /api/comparison?road=&from=&to=` (#7): ours and corporate items on the same `sensor_id` whose intervals overlap match ("both found"); the rest are "only ours" and "only corporate"; counts and shares are counted from these three lists in the two files.
+- The meta the frontend header shows: one entry per road directory (`road`, `road_name`, sensor count from `sensors.json`) and the whole period (smallest and biggest `ts` in all `series.csv` files).
 
 ## General rules
 
@@ -102,7 +113,34 @@ A list of anomalies. One anomaly is one sensor and one continuous interval.
 | `event_id` | string or `null` | id from `events.json`, if the cause is known |
 | `description` | string or `null` | explanation for the side panel: «Поток упал до 720 авт. вместо 4800» |
 
-Each module decides which anomalies get `is_mega` and how to compute `score`, and describes it in its README.
+### Severity: `score`, `level` and `is_mega`
+
+These three fields must mean the same thing on all four roads, so one road's "high" and "mega" look like every other road's. They are rules, not suggestions; each module still lists its own weights and rules in its README.
+
+`score` — the strength of the deviation on one shared scale, from 0 up, one decimal place. In practice a score stays under 10.
+
+- A detector that measures deviation against a statistical norm writes the modified |z| (like the `amplitude` detector in a134).
+- A detector with a fixed rule (a stuck sensor, missing hours, congestion) writes a fixed weight per rule, picked to land where the table below puts that kind of finding (the weights a134 already uses — 3.0 `integrity`, 4.0 `flatline`, 2.8 `direction`, 4.5 `congestion`, 2.5 `profile` — sit on this scale; a134 brings the `level` of these weights in line with the table in #25).
+- Corporate anomalies have no score: `score` is `null` in every `corporate_anomalies.json` item. So it is for a detector that has no number of its own (a134's monthly detectors until #25).
+
+`level` follows from `score` through this table, so the roads bucket alike:
+
+| `score` | `level` |
+| --- | --- |
+| below 2 | `low` |
+| 2 – 3.4 | `medium` |
+| 3.5 – 4.9 | `high` |
+| 5 and above | `critical` |
+
+When `score` is `null`, the producer picks the band its anomaly looks like (for corporate ones: map the corporate system's own severity classes onto the table).
+
+`is_mega` — the road's biggest events, highlighted on the map and charts (FR3), the same bar everywhere:
+
+- a traffic anomaly with `|deviation_pct| ≥ 60` gets `is_mega: true` (the threshold a134 already has);
+- every such anomaly must be marked — no road may skip it to keep its map quiet;
+- everything else is `false`: `technical` anomalies, anomalies with `deviation_pct: null`, and all corporate anomalies (the map highlights our findings; the comparison section shows the corporate ones anyway).
+
+So in `anomalies.json` an anomaly is mega exactly when it is `traffic` and |deviation| reaches 60 %; the `_example` set follows this, and `contract/test_validate.py` checks the example against these rules.
 
 ## `events.json`
 

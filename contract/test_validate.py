@@ -52,6 +52,28 @@ def test_example_covers_every_state():
     assert {a["category"] for a in anomalies} == {"traffic", "technical"}
 
 
+def level_for(score: float) -> str:
+    if score < 2:
+        return "low"
+    if score < 3.5:
+        return "medium"
+    if score < 5:
+        return "high"
+    return "critical"
+
+
+def test_example_follows_the_severity_rules():
+    """docs/contract.md: level follows score, is_mega is ours, traffic and |deviation| >= 60."""
+    for a in json.loads((EXAMPLE / "anomalies.json").read_text("utf-8")):
+        if a["score"] is not None:
+            assert a["level"] == level_for(a["score"]), a["id"]
+        mega = a["category"] == "traffic" and a["deviation_pct"] is not None
+        mega = mega and abs(a["deviation_pct"]) >= 60
+        assert a["is_mega"] == mega, a["id"]
+    for a in json.loads((EXAMPLE / "corporate_anomalies.json").read_text("utf-8")):
+        assert a["score"] is None and not a["is_mega"], a["id"]
+
+
 def test_missing_and_unexpected_files(road: Path):
     (road / "anomalies.json").rename(road / "anomaly.json")
     errors = validate(road)

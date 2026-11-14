@@ -38,7 +38,7 @@
     "road": "_example",
     "km": 47.85,
     "anomaly_count": 3,
-    "is_mega": false,
+    "is_mega": true,
     "directions": {
      "direct": "в сторону города",
      "reverse": "из города"
