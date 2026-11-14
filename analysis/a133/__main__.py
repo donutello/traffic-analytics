@@ -3,4 +3,7 @@
 Run it with: uv run python -m analysis.a133
 """
 
-print("analysis.a133: nothing here yet, see the module README")
+from .pipeline import run
+
+if __name__ == "__main__":
+    run()
