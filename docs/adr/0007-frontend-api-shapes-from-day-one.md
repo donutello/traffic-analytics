@@ -6,7 +6,7 @@
 
 ## Context
 
-The backend side of the data path is not there yet: database tables (#3), the import (#4) and the API endpoints (#5–#7) are open, the contract is still draft v0 (#1). Waiting for all of that would idle the frontend for weeks. At the same time we want the switch to the real backend to be trivial, and we do not want throwaway mock-only components rewritten later.
+The backend side of the data path was not there yet: database tables (#3), the import (#4) and the API endpoints (#5–#7) were open, the contract was still a draft (#1). Waiting for all of that would idle the frontend for weeks. At the same time we want the switch to the real backend to be trivial, and we do not want throwaway mock-only components rewritten later.
 
 ## Decision
 

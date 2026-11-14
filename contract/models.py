@@ -1,7 +1,7 @@
 """The data contract: what a road module writes to analysis/output/<road>/.
 
 These models are the single source of truth. docs/contract.md explains them in plain words.
-Status: draft v0, to be confirmed by the contract owners (see docs/contract.md).
+Status: v1, confirmed by the contract owners in issue #1 (2026-11-14).
 """
 
 from datetime import date, datetime

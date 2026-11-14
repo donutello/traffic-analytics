@@ -18,7 +18,7 @@ By [ADR 0004](0004-data-flow-through-files.md), the road modules and the backend
 - Each hour of the series carries its state (`normal`, `anomaly`, `imputed`), and each anomaly has a `category` (`traffic` or `technical`). The dashboard shows them as they are and doesn't repeat the modules' logic.
 - The corporate system's anomalies use the same format as ours (`corporate_anomalies.json`).
 - Owners: @technostd owns the shared models and the import. Each analyst owns the export of their road. A change to the contract is one pull request that @technostd and every affected analyst approve.
-- The first version (draft v0) is ported from an earlier draft. The owners confirm or change it in issue #1.
+- The first version (draft v0) is ported from an earlier draft. The owners confirmed it in issue #1 as v1 (2026-11-14): the format stood as it was, and `score`, `level` and `is_mega` got fixed meanings in docs/contract.md.
 
 ## Alternatives
 
