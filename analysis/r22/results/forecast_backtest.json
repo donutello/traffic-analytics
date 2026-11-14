@@ -1,0 +1,456 @@
+{
+  "method": {
+    "forecaster": "median of the sensor's own real hours of the same weekday kind and hour within the 84 days before the target, at least 6 of them (the detection norm of detect.py as a prediction)",
+    "walk_forward": "every 7 days a new run, using only hours strictly before the week start; every real hour of the week ahead is evaluated",
+    "naive_baseline": "the same hour 7 days earlier (real hours only)",
+    "band": "+- 3.5 sigma on the floored robust scale of detect.py",
+    "metrics": "MAE авт./ч, WAPE %, MAPE % on hours with at least 10 авт./ч actual; head to head = same hours for both rules"
+  },
+  "sensors": {
+    "r22-km448-650": {
+      "weeks_walked": 157,
+      "real_hours_evaluated": 26214,
+      "forecasts": 24346,
+      "no_forecast": {
+        "no_references": 189,
+        "fewer_than_6_references": 1679
+      },
+      "naive_available": 26082,
+      "results": {
+        "overall": {
+          "n": 24307,
+          "forecaster": {
+            "n": 24307,
+            "mae": 46.2,
+            "wape_pct": 8.9,
+            "mape_pct": 11.5
+          },
+          "naive": {
+            "n": 24307,
+            "mae": 41.1,
+            "wape_pct": 7.9,
+            "mape_pct": 10.4
+          },
+          "mae_gain_pct": -12.4
+        },
+        "by_season": {
+          "winter": {
+            "n": 6033,
+            "forecaster": {
+              "n": 6033,
+              "mae": 44.4,
+              "wape_pct": 9.7,
+              "mape_pct": 12.0
+            },
+            "naive": {
+              "n": 6033,
+              "mae": 45.7,
+              "wape_pct": 10.0,
+              "mape_pct": 12.4
+            },
+            "mae_gain_pct": 2.8
+          },
+          "spring": {
+            "n": 6326,
+            "forecaster": {
+              "n": 6326,
+              "mae": 51.6,
+              "wape_pct": 9.8,
+              "mape_pct": 11.3
+            },
+            "naive": {
+              "n": 6326,
+              "mae": 42.1,
+              "wape_pct": 8.0,
+              "mape_pct": 10.3
+            },
+            "mae_gain_pct": -22.6
+          },
+          "summer": {
+            "n": 6480,
+            "forecaster": {
+              "n": 6480,
+              "mae": 34.7,
+              "wape_pct": 6.1,
+              "mape_pct": 8.4
+            },
+            "naive": {
+              "n": 6480,
+              "mae": 35.9,
+              "wape_pct": 6.3,
+              "mape_pct": 8.6
+            },
+            "mae_gain_pct": 3.3
+          },
+          "autumn": {
+            "n": 5468,
+            "forecaster": {
+              "n": 5468,
+              "mae": 55.6,
+              "wape_pct": 11.0,
+              "mape_pct": 15.1
+            },
+            "naive": {
+              "n": 5468,
+              "mae": 41.1,
+              "wape_pct": 8.1,
+              "mape_pct": 10.5
+            },
+            "mae_gain_pct": -35.3
+          }
+        },
+        "by_day_kind": {
+          "weekday": {
+            "n": 16952,
+            "forecaster": {
+              "n": 16952,
+              "mae": 42.6,
+              "wape_pct": 8.1,
+              "mape_pct": 10.6
+            },
+            "naive": {
+              "n": 16952,
+              "mae": 37.9,
+              "wape_pct": 7.2,
+              "mape_pct": 9.7
+            },
+            "mae_gain_pct": -12.4
+          },
+          "weekend": {
+            "n": 6997,
+            "forecaster": {
+              "n": 6997,
+              "mae": 54.6,
+              "wape_pct": 10.8,
+              "mape_pct": 13.5
+            },
+            "naive": {
+              "n": 6997,
+              "mae": 45.6,
+              "wape_pct": 9.0,
+              "mape_pct": 11.4
+            },
+            "mae_gain_pct": -19.7
+          },
+          "holiday": {
+            "n": 358,
+            "forecaster": {
+              "n": 358,
+              "mae": 54.6,
+              "wape_pct": 12.8,
+              "mape_pct": 14.8
+            },
+            "naive": {
+              "n": 358,
+              "mae": 104.8,
+              "wape_pct": 24.6,
+              "mape_pct": 26.1
+            },
+            "mae_gain_pct": 47.9
+          }
+        }
+      },
+      "band": {
+        "forecast_hours": 24346,
+        "inside_band": 24170,
+        "coverage_pct": 99.28,
+        "normal_expectation_pct": 99.95
+      }
+    },
+    "r22-km478-742": {
+      "weeks_walked": 91,
+      "real_hours_evaluated": 14745,
+      "forecasts": 12988,
+      "no_forecast": {
+        "no_references": 310,
+        "fewer_than_6_references": 1447
+      },
+      "naive_available": 14451,
+      "results": {
+        "overall": {
+          "n": 12956,
+          "forecaster": {
+            "n": 12956,
+            "mae": 23.8,
+            "wape_pct": 14.4,
+            "mape_pct": 17.8
+          },
+          "naive": {
+            "n": 12956,
+            "mae": 20.9,
+            "wape_pct": 12.7,
+            "mape_pct": 16.6
+          },
+          "mae_gain_pct": -13.9
+        },
+        "by_season": {
+          "winter": {
+            "n": 4002,
+            "forecaster": {
+              "n": 4002,
+              "mae": 21.9,
+              "wape_pct": 15.7,
+              "mape_pct": 19.9
+            },
+            "naive": {
+              "n": 4002,
+              "mae": 20.2,
+              "wape_pct": 14.5,
+              "mape_pct": 18.4
+            },
+            "mae_gain_pct": -8.4
+          },
+          "spring": {
+            "n": 3507,
+            "forecaster": {
+              "n": 3507,
+              "mae": 24.6,
+              "wape_pct": 14.8,
+              "mape_pct": 16.1
+            },
+            "naive": {
+              "n": 3507,
+              "mae": 21.5,
+              "wape_pct": 12.9,
+              "mape_pct": 17.0
+            },
+            "mae_gain_pct": -14.4
+          },
+          "summer": {
+            "n": 2134,
+            "forecaster": {
+              "n": 2134,
+              "mae": 20.8,
+              "wape_pct": 10.2,
+              "mape_pct": 12.1
+            },
+            "naive": {
+              "n": 2134,
+              "mae": 21.1,
+              "wape_pct": 10.3,
+              "mape_pct": 12.8
+            },
+            "mae_gain_pct": 1.4
+          },
+          "autumn": {
+            "n": 3313,
+            "forecaster": {
+              "n": 3313,
+              "mae": 27.1,
+              "wape_pct": 16.0,
+              "mape_pct": 20.7
+            },
+            "naive": {
+              "n": 3313,
+              "mae": 21.1,
+              "wape_pct": 12.5,
+              "mape_pct": 16.5
+            },
+            "mae_gain_pct": -28.4
+          }
+        },
+        "by_day_kind": {
+          "weekday": {
+            "n": 9046,
+            "forecaster": {
+              "n": 9046,
+              "mae": 22.3,
+              "wape_pct": 13.4,
+              "mape_pct": 16.5
+            },
+            "naive": {
+              "n": 9046,
+              "mae": 19.6,
+              "wape_pct": 11.7,
+              "mape_pct": 15.3
+            },
+            "mae_gain_pct": -13.8
+          },
+          "weekend": {
+            "n": 3718,
+            "forecaster": {
+              "n": 3718,
+              "mae": 27.7,
+              "wape_pct": 17.0,
+              "mape_pct": 20.9
+            },
+            "naive": {
+              "n": 3718,
+              "mae": 23.0,
+              "wape_pct": 14.2,
+              "mape_pct": 18.6
+            },
+            "mae_gain_pct": -20.4
+          },
+          "holiday": {
+            "n": 192,
+            "forecaster": {
+              "n": 192,
+              "mae": 18.0,
+              "wape_pct": 14.5,
+              "mape_pct": 16.8
+            },
+            "naive": {
+              "n": 192,
+              "mae": 44.1,
+              "wape_pct": 35.3,
+              "mape_pct": 40.7
+            },
+            "mae_gain_pct": 59.2
+          }
+        }
+      },
+      "band": {
+        "forecast_hours": 12988,
+        "inside_band": 12895,
+        "coverage_pct": 99.28,
+        "normal_expectation_pct": 99.95
+      }
+    }
+  },
+  "overall": {
+    "sensors": 2,
+    "real_hours_evaluated": 40959,
+    "forecasts": 37334,
+    "results": {
+      "overall": {
+        "n": 37263,
+        "forecaster": {
+          "n": 37263,
+          "mae": 38.4,
+          "wape_pct": 9.7,
+          "mape_pct": 13.7
+        },
+        "naive": {
+          "n": 37263,
+          "mae": 34.1,
+          "wape_pct": 8.6,
+          "mape_pct": 12.6
+        },
+        "mae_gain_pct": -12.6
+      },
+      "by_season": {
+        "winter": {
+          "n": 10035,
+          "forecaster": {
+            "n": 10035,
+            "mae": 35.4,
+            "wape_pct": 10.7,
+            "mape_pct": 15.1
+          },
+          "naive": {
+            "n": 10035,
+            "mae": 35.5,
+            "wape_pct": 10.7,
+            "mape_pct": 14.8
+          },
+          "mae_gain_pct": 0.3
+        },
+        "spring": {
+          "n": 9833,
+          "forecaster": {
+            "n": 9833,
+            "mae": 42.0,
+            "wape_pct": 10.5,
+            "mape_pct": 13.0
+          },
+          "naive": {
+            "n": 9833,
+            "mae": 34.8,
+            "wape_pct": 8.7,
+            "mape_pct": 12.7
+          },
+          "mae_gain_pct": -20.7
+        },
+        "summer": {
+          "n": 8614,
+          "forecaster": {
+            "n": 8614,
+            "mae": 31.3,
+            "wape_pct": 6.5,
+            "mape_pct": 9.3
+          },
+          "naive": {
+            "n": 8614,
+            "mae": 32.2,
+            "wape_pct": 6.7,
+            "mape_pct": 9.6
+          },
+          "mae_gain_pct": 2.8
+        },
+        "autumn": {
+          "n": 8781,
+          "forecaster": {
+            "n": 8781,
+            "mae": 44.8,
+            "wape_pct": 11.9,
+            "mape_pct": 17.2
+          },
+          "naive": {
+            "n": 8781,
+            "mae": 33.5,
+            "wape_pct": 8.9,
+            "mape_pct": 12.8
+          },
+          "mae_gain_pct": -33.7
+        }
+      },
+      "by_day_kind": {
+        "weekday": {
+          "n": 25998,
+          "forecaster": {
+            "n": 25998,
+            "mae": 35.6,
+            "wape_pct": 8.9,
+            "mape_pct": 12.7
+          },
+          "naive": {
+            "n": 25998,
+            "mae": 31.5,
+            "wape_pct": 7.9,
+            "mape_pct": 11.6
+          },
+          "mae_gain_pct": -13.0
+        },
+        "weekend": {
+          "n": 10715,
+          "forecaster": {
+            "n": 10715,
+            "mae": 45.2,
+            "wape_pct": 11.7,
+            "mape_pct": 16.1
+          },
+          "naive": {
+            "n": 10715,
+            "mae": 37.8,
+            "wape_pct": 9.8,
+            "mape_pct": 13.9
+          },
+          "mae_gain_pct": -19.6
+        },
+        "holiday": {
+          "n": 550,
+          "forecaster": {
+            "n": 550,
+            "mae": 41.8,
+            "wape_pct": 13.0,
+            "mape_pct": 15.5
+          },
+          "naive": {
+            "n": 550,
+            "mae": 83.6,
+            "wape_pct": 26.0,
+            "mape_pct": 31.2
+          },
+          "mae_gain_pct": 50.0
+        }
+      }
+    },
+    "band": {
+      "forecast_hours": 37334,
+      "inside_band": 37065,
+      "coverage_pct": 99.28,
+      "normal_expectation_pct": 99.95
+    }
+  }
+}

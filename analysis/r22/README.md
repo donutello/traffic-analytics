@@ -3,11 +3,10 @@
 Road module for the traffic-analytics dashboard: it reads the road operator's hourly
 traffic export for two sensors on the approach road to Saratov near Borisoglebsk
 (Воронежская область), finds anomalies against their own history, and writes the five
-contract files into `analysis/output/r22/`. Issues #34–#39; the planned trends and
-forecast stretch (issue #40) builds directly on the same output — `series.csv` gives it
-a hole-free three-year hourly series, the monthly rows of `anomalies.json` give it clean
-year-over-year comparisons, and `events.json` gives it a small labelled calendar of known
-outside events to keep anomalies honest against (see Status).
+contract files into `analysis/output/r22/`. Issues #34–#39; the trends and forecast
+stretch (issue #40) runs on the same three-year hourly series in the same command, and
+lands its own measured tables in `analysis/r22/results/` (see the Trends and forecast
+section below).
 
 ## About the input data
 
@@ -96,20 +95,61 @@ days. Like the portal it is loud about weather and holidays (and reports the
 the km 478 sensors having been dead since April 2025. It scores through the same
 `level_from_score` band and never claims mega.
 
+## Trends and forecast (#40)
+
+**The customer framing.** Issue #40 wants one screen: the last full hour of traffic, next to it an expectation for the hour coming after. `forecast.hour_forecast(hours, target, cutoff)` is exactly that question - point value, wide band, or silence with a stated reason - and `trends.py` answers its other half: when this road actually misbehaves.
+
+**The forecaster is the norm, used as a prediction.** No off-the-shelf forecaster was added (and none exists in the public analyzers this module leans on): the point forecast of one hour is the detection norm of `detect.py` read forwards - the median of the sensor's own REAL hours of the same weekday kind and the same hour within the 84 days before it, at least 6 of them; fewer references and the forecaster stays silent (the reason is the reference count, and the backtest file counts every silent hour by it). Around the point sits a band of ±3.5 sigma on the same floored robust scale as the detectors (20 авт./ч / 10 % floors): for a roughly normal hour such a band is expected to hold ~99.95 % of outcomes.
+
+**The backtest.** `forecast.backtest()` walks the real series forward one week at a time: every Monday the forecaster gets only the hours strictly before that moment and forecasts every real hour of the week ahead; imputed hours are never scored and never referenced. The opponent is the naive baseline of the same hour one week earlier, and every comparison is head to head - only hours where both rules could speak. Error is MAE (авт./ч), WAPE (%) and MAPE (%) on hours whose actual is ≥ 10 авт./ч (a night hour of 2 cars makes any percentage a lottery). The offline caveat of #37 is deliberately not used here: the backtest looks only backward. Fairness check: refreshing the cutoff one hour before every target instead of fixing it at the week start changes the overall gap only from −12.6 % to −11.3 %, so the loss is the 84-day median itself, not the walk-forward schedule.
+
+**Measured error** - 37 263 real hours head to head over 3 years, both sensors (`analysis/r22/results/forecast_backtest.json`):
+
+| head to head over | hours | forecaster MAE | forecaster WAPE | naive MAE | naive WAPE | MAE gain |
+|---|---|---|---|---|---|---|
+| all hours | 37 263 | 38.4 | 9.7 % | 34.1 | 8.6 % | **−12.6 %** |
+| winter | 10 035 | 35.4 | 10.7 % | 35.5 | 10.7 % | +0.3 % |
+| spring | 9 833 | 42.0 | 10.5 % | 34.8 | 8.7 % | −20.7 % |
+| summer | 8 614 | 31.3 | 6.5 % | 32.2 | 6.7 % | +2.8 % |
+| autumn | 8 781 | 44.8 | 11.9 % | 33.5 | 8.9 % | **−33.7 %** |
+| plain weekdays | 25 998 | 35.6 | 8.9 % | 31.5 | 7.9 % | −13.0 % |
+| plain weekends | 10 715 | 45.2 | 11.7 % | 37.8 | 9.8 % | −19.6 % |
+| official holidays | 550 | 41.8 | 13.0 % | 83.6 | 26.0 % | **+50.0 %** |
+
+MAPE says the same (13.7 % vs 12.6 % overall); the ±3.5 sigma band held 99.28 % of the 37 334 forecast hours against the ~99.95 % normal expectation. The rule did not earn its place everywhere, and the data says exactly where it did and where it costs:
+
+- it doubles the naive's accuracy on official holidays (MAE 41.8 vs 83.6 авт./ч) - the only hours where repeating last week crosses a calendar cliff the same-kind-of-day pool can step over;
+- it loses on plain weekdays and weekends because the 84-day median is built of weeks-old days and lags every level change;
+- spring and autumn 2024-2025 are precisely the seasons the road's level moved (repair works starting, the bypass contract of 21.08.2025, traffic climbing through autumn) - the same shifts the FROZEN-norm regime detector of #37 exists to tell.
+
+**Trends** (`analysis/r22/results/trends.json`, 202 traffic findings; the 18 technical ones are sensor health, not traffic, and stay out of the tables). Every finding is counted in the season, kind of day and hour its first deviant hour starts in, and frequency is normalized by the real (not imputed) hours of the same bucket, so km 478's silent year cannot fake a quiet season; strength is the module score on the shared contract 0..10 scale. The plain-word conclusions the data gives:
+
+1. anomalies concentrate in winter and autumn: 6.7 findings per 1000 observed hours in each, 2-2.5x the spring (2.6) and summer (3.2) rates; quarters Q4 and Q1 together hold 132 of 202 findings;
+2. January is the loudest single month - 46 findings, 12.4 per 1000 hours, and the only month with a top-of-scale (9.9) finding: the New Year break tears traffic apart harder than a holiday-aware norm can paper over;
+3. a day off beats a working day as often, not as big: official holidays show 24.3 findings per 1000 observed hours against weekends' 5.4 and weekdays' 3.3, while mean scores sit flat at 4.4-4.7 everywhere - the calendar moves how often anomalies fire, not how strong each one is;
+4. apart from hour 00 (where whole-day and whole-month findings all start - an accounting artifact, not a night story), single-hour findings peak in the middle of the day: the strongest are at 9 o'clock (mean score 7.1, the morning queues of the 03.04.2026 Borisoglebsk crash among them), the most frequent at 11-12 o'clock, the daytime congestion band.
+
+Keep both result files out of `analysis/output/r22/`: the contract allows its five files only there ("No other files are allowed in a road directory"). What the dashboard could later show: the last full hour beside `hour_forecast`'s next-hour point and its wide band, visibly marked quiet on hours the 6-reference rule falls silent about - the frontend people can take it from there.
+
 ## Checks
 
 From `traffic-analytics/`: `uv run ruff check analysis/r22`,
 `uv run ruff format --check analysis/r22`, `uv run pytest analysis/r22`
-(22 tests on made-up frames: parser quirks, holiday kinds, sum audits, half-split hours,
+(28 tests on made-up frames: parser quirks, holiday kinds, sum audits, half-split hours,
 gap fills, every detector shape, promotion once-and-capped, the yoy gate, linking, states,
-corporate numbering), and `uv run python -m contract.validate analysis/output/r22`.
+corporate numbering, plus the #40 set: the forecaster's silence below six references, the
+floored sigma band, a backtest that beats the naive baseline on made-up seasonal traffic,
+shuffled futures that leave forecasts unchanged, and the trend tables on counted-up
+findings), and `uv run python -m contract.validate analysis/output/r22` - which passes on
+the unchanged five files, since the #40 results live in the module's own directory.
 
 ## Run
 
 `uv run python -m analysis.r22` reads `analysis/data/raw/r22/`, writes
 `sensors.json`, `events.json`, `series.csv`, `anomalies.json`, `corporate.json`  → the
-contract's five files into `analysis/output/r22/`. Then the dashboard loads them with
-`python -m backend.load r22`.
+contract's five files into `analysis/output/r22/`, then refreshes the #40 tables
+`trends.json` and `forecast_backtest.json` in `analysis/r22/results/` and prints their
+headline lines. Then the dashboard loads them with `python -m backend.load r22`.
 
 ## Status (production run, this session's export)
 

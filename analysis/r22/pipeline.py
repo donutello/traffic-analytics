@@ -3,7 +3,8 @@
 The run is: parse the raw exports -> technical failures and gap filling (#36) ->
 traffic detectors (#37) -> cross-channel confirmation promotion -> manual-review
 events and anomaly-event linking (#35) -> the corporate system's findings (#38). All
-five contract files come out of one command, `uv run python -m analysis.r22`.
+five contract files come out of one command, `uv run python -m analysis.r22`; the same
+run then refreshes the #40 trend/backtest results under analysis/r22/results/.
 """
 
 import csv
@@ -14,9 +15,14 @@ import pandas as pd
 
 from contract.models import SERIES_COLUMNS
 
-from . import corporate, detect, events, parse, quality
+from . import corporate, detect, events, forecast, parse, quality, trends
 
 COLUMNS = SERIES_COLUMNS
+
+# The extras of issue #40 (trend tables and the forecast backtest) are machine-readable
+# results too, but NOT contract files, and the contract allows nothing else in a road
+# output directory - so they live inside the module, in analysis/r22/results/.
+RESULTS_DIR = Path(__file__).resolve().parent / "results"
 
 # An anomaly links to an event only when their times overlap AND the anomaly kind fits
 # the event category: an accident is a volume drop, a queue, a sustained slow-down
@@ -165,6 +171,18 @@ def run(raw_dir: Path = parse.RAW_DIR, out_dir: Path = parse.OUTPUT_DIR) -> None
         mark = "found" if links[event["id"]] else "missed"
         print(f"  {event['day']} [{event['category']:<8}] {mark:>6}  {event['title']}")
     print(f"result written to {out_dir.relative_to(out_dir.parents[1])}")
+
+    # the #40 extras: trend tables and the walk-forward forecast error, refreshed from
+    # the very same run's filled series and finalized findings, kept out of the
+    # contract directory (docs/contract: no other files allowed there)
+    trends_data = trends.build_trends(filled, anomalies)
+    backtest_data = forecast.backtest(filled)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    write_json(RESULTS_DIR / "trends.json", trends_data)
+    write_json(RESULTS_DIR / "forecast_backtest.json", backtest_data)
+    for line in trends.summarize(trends_data) + forecast.summarize(backtest_data):
+        print(line)
+    print(f"module results written to {RESULTS_DIR.relative_to(RESULTS_DIR.parents[2])}")
 
 
 if __name__ == "__main__":

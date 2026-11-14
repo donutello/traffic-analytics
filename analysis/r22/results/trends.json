@@ -1,0 +1,445 @@
+{
+  "method": {
+    "basis": "the module's own anomalies; every finding counted in the season, day kind and hour its first deviant hour starts in",
+    "frequency": "count and findings per 1000 real (not imputed) sensor hours of the same bucket; per type against the whole record",
+    "strength": "mean and max of the module score on the shared contract 0..10 scale",
+    "technical_findings": "excluded from the tables (sensor health, not traffic)"
+  },
+  "totals": {
+    "own_findings": 220,
+    "traffic_findings": 202,
+    "technical_findings": 18,
+    "hours_affected": 7765.0,
+    "real_hours_in_record": 41109,
+    "first_finding": "2023-09-01T00:00:00+03:00",
+    "last_finding": "2026-07-29T10:00:00+03:00"
+  },
+  "traffic": {
+    "by_month": [
+      {
+        "bucket": 1,
+        "count": 46,
+        "hours_affected": 945.0,
+        "mean_score": 4.64,
+        "max_score": 9.9,
+        "real_hours": 3719,
+        "per_1000h": 12.369
+      },
+      {
+        "bucket": 2,
+        "count": 6,
+        "hours_affected": 1420.0,
+        "mean_score": 3.83,
+        "max_score": 4.5,
+        "real_hours": 3402,
+        "per_1000h": 1.764
+      },
+      {
+        "bucket": 3,
+        "count": 6,
+        "hours_affected": 57.0,
+        "mean_score": 4.08,
+        "max_score": 4.5,
+        "real_hours": 3715,
+        "per_1000h": 1.615
+      },
+      {
+        "bucket": 4,
+        "count": 16,
+        "hours_affected": 36.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 3562,
+        "per_1000h": 4.492
+      },
+      {
+        "bucket": 5,
+        "count": 5,
+        "hours_affected": 11.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 2975,
+        "per_1000h": 1.681
+      },
+      {
+        "bucket": 6,
+        "count": 14,
+        "hours_affected": 101.0,
+        "mean_score": 4.52,
+        "max_score": 6.3,
+        "real_hours": 2880,
+        "per_1000h": 4.861
+      },
+      {
+        "bucket": 7,
+        "count": 10,
+        "hours_affected": 22.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 2927,
+        "per_1000h": 3.416
+      },
+      {
+        "bucket": 8,
+        "count": 5,
+        "hours_affected": 10.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 3249,
+        "per_1000h": 1.539
+      },
+      {
+        "bucket": 9,
+        "count": 20,
+        "hours_affected": 1530.0,
+        "mean_score": 4.6,
+        "max_score": 7.0,
+        "real_hours": 3647,
+        "per_1000h": 5.484
+      },
+      {
+        "bucket": 10,
+        "count": 25,
+        "hours_affected": 1598.0,
+        "mean_score": 4.54,
+        "max_score": 6.8,
+        "real_hours": 3717,
+        "per_1000h": 6.726
+      },
+      {
+        "bucket": 11,
+        "count": 28,
+        "hours_affected": 1686.0,
+        "mean_score": 4.78,
+        "max_score": 7.4,
+        "real_hours": 3600,
+        "per_1000h": 7.778
+      },
+      {
+        "bucket": 12,
+        "count": 21,
+        "hours_affected": 349.0,
+        "mean_score": 4.3,
+        "max_score": 5.5,
+        "real_hours": 3716,
+        "per_1000h": 5.651
+      }
+    ],
+    "by_quarter": [
+      {
+        "bucket": 1,
+        "count": 58,
+        "hours_affected": 2422.0,
+        "mean_score": 4.5,
+        "max_score": 9.9,
+        "real_hours": 10836,
+        "per_1000h": 5.353
+      },
+      {
+        "bucket": 2,
+        "count": 35,
+        "hours_affected": 148.0,
+        "mean_score": 4.51,
+        "max_score": 6.3,
+        "real_hours": 9417,
+        "per_1000h": 3.717
+      },
+      {
+        "bucket": 3,
+        "count": 35,
+        "hours_affected": 1562.0,
+        "mean_score": 4.55,
+        "max_score": 7.0,
+        "real_hours": 9823,
+        "per_1000h": 3.563
+      },
+      {
+        "bucket": 4,
+        "count": 74,
+        "hours_affected": 3633.0,
+        "mean_score": 4.56,
+        "max_score": 7.4,
+        "real_hours": 11033,
+        "per_1000h": 6.707
+      }
+    ],
+    "by_season": [
+      {
+        "bucket": "winter",
+        "count": 73,
+        "hours_affected": 2714.0,
+        "mean_score": 4.48,
+        "max_score": 9.9,
+        "real_hours": 10837,
+        "per_1000h": 6.736
+      },
+      {
+        "bucket": "spring",
+        "count": 27,
+        "hours_affected": 104.0,
+        "mean_score": 4.41,
+        "max_score": 4.5,
+        "real_hours": 10252,
+        "per_1000h": 2.634
+      },
+      {
+        "bucket": "summer",
+        "count": 29,
+        "hours_affected": 133.0,
+        "mean_score": 4.51,
+        "max_score": 6.3,
+        "real_hours": 9056,
+        "per_1000h": 3.202
+      },
+      {
+        "bucket": "autumn",
+        "count": 73,
+        "hours_affected": 4814.0,
+        "mean_score": 4.65,
+        "max_score": 7.4,
+        "real_hours": 10964,
+        "per_1000h": 6.658
+      }
+    ],
+    "by_day_kind": [
+      {
+        "bucket": "weekday",
+        "count": 92,
+        "hours_affected": 4169.0,
+        "mean_score": 4.52,
+        "max_score": 6.8,
+        "real_hours": 27702,
+        "per_1000h": 3.321
+      },
+      {
+        "bucket": "weekend",
+        "count": 61,
+        "hours_affected": 2671.0,
+        "mean_score": 4.6,
+        "max_score": 9.9,
+        "real_hours": 11392,
+        "per_1000h": 5.355
+      },
+      {
+        "bucket": "holiday",
+        "count": 49,
+        "hours_affected": 925.0,
+        "mean_score": 4.48,
+        "max_score": 7.4,
+        "real_hours": 2015,
+        "per_1000h": 24.318
+      }
+    ],
+    "by_hour": [
+      {
+        "bucket": 0,
+        "count": 59,
+        "hours_affected": 7248.0,
+        "mean_score": 4.02,
+        "max_score": 6.3,
+        "real_hours": 1714,
+        "per_1000h": 34.422
+      },
+      {
+        "bucket": 5,
+        "count": 1,
+        "hours_affected": 4.0,
+        "mean_score": 5.2,
+        "max_score": 5.2,
+        "real_hours": 1712,
+        "per_1000h": 0.584
+      },
+      {
+        "bucket": 7,
+        "count": 4,
+        "hours_affected": 20.0,
+        "mean_score": 5.2,
+        "max_score": 6.8,
+        "real_hours": 1713,
+        "per_1000h": 2.335
+      },
+      {
+        "bucket": 8,
+        "count": 7,
+        "hours_affected": 29.0,
+        "mean_score": 5.27,
+        "max_score": 7.4,
+        "real_hours": 1712,
+        "per_1000h": 4.089
+      },
+      {
+        "bucket": 9,
+        "count": 3,
+        "hours_affected": 22.0,
+        "mean_score": 7.1,
+        "max_score": 9.9,
+        "real_hours": 1711,
+        "per_1000h": 1.753
+      },
+      {
+        "bucket": 10,
+        "count": 14,
+        "hours_affected": 70.0,
+        "mean_score": 4.69,
+        "max_score": 6.5,
+        "real_hours": 1713,
+        "per_1000h": 8.173
+      },
+      {
+        "bucket": 11,
+        "count": 28,
+        "hours_affected": 108.0,
+        "mean_score": 4.64,
+        "max_score": 7.4,
+        "real_hours": 1714,
+        "per_1000h": 16.336
+      },
+      {
+        "bucket": 12,
+        "count": 28,
+        "hours_affected": 101.0,
+        "mean_score": 4.68,
+        "max_score": 7.2,
+        "real_hours": 1712,
+        "per_1000h": 16.355
+      },
+      {
+        "bucket": 13,
+        "count": 14,
+        "hours_affected": 35.0,
+        "mean_score": 4.68,
+        "max_score": 7.0,
+        "real_hours": 1714,
+        "per_1000h": 8.168
+      },
+      {
+        "bucket": 14,
+        "count": 8,
+        "hours_affected": 29.0,
+        "mean_score": 4.93,
+        "max_score": 6.6,
+        "real_hours": 1711,
+        "per_1000h": 4.676
+      },
+      {
+        "bucket": 15,
+        "count": 12,
+        "hours_affected": 36.0,
+        "mean_score": 4.63,
+        "max_score": 6.1,
+        "real_hours": 1713,
+        "per_1000h": 7.005
+      },
+      {
+        "bucket": 16,
+        "count": 13,
+        "hours_affected": 34.0,
+        "mean_score": 4.5,
+        "max_score": 5.0,
+        "real_hours": 1714,
+        "per_1000h": 7.585
+      },
+      {
+        "bucket": 17,
+        "count": 4,
+        "hours_affected": 8.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 1711,
+        "per_1000h": 2.338
+      },
+      {
+        "bucket": 18,
+        "count": 1,
+        "hours_affected": 2.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 1713,
+        "per_1000h": 0.584
+      },
+      {
+        "bucket": 19,
+        "count": 2,
+        "hours_affected": 4.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 1714,
+        "per_1000h": 1.167
+      },
+      {
+        "bucket": 20,
+        "count": 1,
+        "hours_affected": 2.0,
+        "mean_score": 4.5,
+        "max_score": 4.5,
+        "real_hours": 1713,
+        "per_1000h": 0.584
+      },
+      {
+        "bucket": 21,
+        "count": 2,
+        "hours_affected": 8.0,
+        "mean_score": 4.3,
+        "max_score": 4.4,
+        "real_hours": 1715,
+        "per_1000h": 1.166
+      },
+      {
+        "bucket": 22,
+        "count": 1,
+        "hours_affected": 5.0,
+        "mean_score": 4.0,
+        "max_score": 4.0,
+        "real_hours": 1715,
+        "per_1000h": 0.583
+      }
+    ],
+    "by_type": [
+      {
+        "bucket": "congestion",
+        "count": 119,
+        "hours_affected": 388.0,
+        "mean_score": 4.51,
+        "max_score": 5.0,
+        "real_hours": 41109,
+        "per_1000h": 2.895
+      },
+      {
+        "bucket": "level_of_service_shift",
+        "count": 8,
+        "hours_affected": 5736.0,
+        "mean_score": 3.33,
+        "max_score": 4.5,
+        "real_hours": 41109,
+        "per_1000h": 0.195
+      },
+      {
+        "bucket": "speed_drop",
+        "count": 8,
+        "hours_affected": 38.0,
+        "mean_score": 6.51,
+        "max_score": 7.4,
+        "real_hours": 41109,
+        "per_1000h": 0.195
+      },
+      {
+        "bucket": "volume_drop",
+        "count": 61,
+        "hours_affected": 1556.0,
+        "mean_score": 4.42,
+        "max_score": 7.4,
+        "real_hours": 41109,
+        "per_1000h": 1.484
+      },
+      {
+        "bucket": "volume_spike",
+        "count": 6,
+        "hours_affected": 47.0,
+        "mean_score": 5.13,
+        "max_score": 9.9,
+        "real_hours": 41109,
+        "per_1000h": 0.146
+      }
+    ]
+  }
+}
