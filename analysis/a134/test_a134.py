@@ -60,22 +60,31 @@ def filled_frame(specs: list[tuple[str, dict]]) -> pd.DataFrame:
         "sensor_id",
         "ts",
         "volume",
+        "volume_direct",
+        "volume_reverse",
         "speed_direct",
+        "speed_reverse",
         "load_direct",
+        "load_reverse",
         "large_trucks",
         "road_trains",
         "imputation_method",
     ]
     rows = []
     for ts, values in specs:
+        volume = values.get("volume", 1000.0)
         rows.append(
             [
                 SECTION,
                 SID,
                 pd.Timestamp(ts, tz=parse.MSK),
-                values.get("volume", 1000.0),
+                volume,
+                values.get("volume_direct", volume / 2),
+                values.get("volume_reverse", volume / 2),
                 values.get("speed_direct", 85.0),
+                values.get("speed_reverse", 85.0),
                 values.get("load_direct", 5.0),
+                values.get("load_reverse", 4.0),
                 10.0,
                 5.0,
                 values.get("imputation_method", ""),
@@ -459,11 +468,22 @@ def test_hourly_spike_and_speed_drop_detected():
     spike = [
         a
         for a in found
-        if a["type"] == "volume_spike" and a["starts_at"] == "2024-07-11T10:00:00+03:00"
+        if a["type"] == "volume_spike"
+        and a["metric"] == "volume"
+        and a["starts_at"] == "2024-07-11T10:00:00+03:00"
+    ]
+    both_directions = [
+        a
+        for a in found
+        if a["type"] == "volume_spike"
+        and a["metric"] in ("volume_direct", "volume_reverse")
+        and a["starts_at"] == "2024-07-11T10:00:00+03:00"
     ]
     slow = [a for a in found if a["type"] == "speed_drop"]
     assert len(spike) == 1 and spike[0]["actual"] > spike[0]["expected"]
-    assert len(slow) == 1 and slow[0]["metric"] == "speed_direct"
+    assert len(both_directions) == 2  # the per-direction runs see the same spike
+    assert all(a["metric"] == "speed_direct" for a in slow)
+    assert len(slow) == 1  # the reverse lane never slowed: its own run stays quiet
     assert slow[0]["starts_at"] == "2024-07-16T08:00:00+03:00"
 
 
@@ -473,10 +493,20 @@ def test_daily_extreme_is_flagged_whole_day():
     daily = [
         a
         for a in found
-        if a["type"] == "volume_drop" and a["starts_at"] == "2024-07-20T00:00:00+03:00"
+        if a["type"] == "volume_drop"
+        and a["metric"] == "volume"
+        and a["starts_at"] == "2024-07-20T00:00:00+03:00"
     ]
     assert len(daily) == 2  # 24 deviant hours collapse into one hourly run and one day
     assert any(a["detector"] == "amplitude" and a["actual"] == pytest.approx(2400.0) for a in daily)
+    directions = [
+        a
+        for a in found
+        if a["type"] == "volume_drop"
+        and a["metric"] in ("volume_direct", "volume_reverse")
+        and a["starts_at"] == "2024-07-20T00:00:00+03:00"
+    ]
+    assert len(directions) == 2  # both direction runs cover the same whole day
 
 
 def test_imputed_hours_never_count_as_traffic():
@@ -713,3 +743,208 @@ def test_series_states_imputed_wins_over_anomaly():
     ]
     states = pipeline.mark_states(filled, anomalies)
     assert list(states) == ["imputed", "anomaly", "anomaly"]
+
+
+# --- smart-city ports (dilczech / sasha_k, see the README credit section) --------------
+
+
+def tight_july(overrides: dict[str, dict]) -> pd.DataFrame:
+    """Two quiet Julys with a day/night profile where every hour repeats one
+    near-identical value (MAD 0): without the floor the old fallback made the sigma
+    of a hair, and any small absolute wobble became a 20-sigma storm. Only the
+    explicitly given (day, hours)-overrides may deviate."""
+    specs = []
+    for year in (2023, 2024):
+        for day in range(1, 32):
+            key = f"{year}-07-{day:02d}"
+            for h in range(24):
+                level = (1000.0 if 7 <= h < 22 else 30.0) + (1.0 if h % 2 else -1.0)
+                override = overrides.get(key, {})
+                if override and override["hours"][0] <= h < override["hours"][1]:
+                    level = override["level"]
+                specs.append((f"{key}T{h:02d}:00", {"volume": level}))
+    return filled_frame(specs)
+
+
+def test_floored_scale_silences_tight_mad_night_hours():
+    # the night here reads a rock-steady 30 авт./ч (MAD 0 -> the old fallback turned
+    # it into a sigma of 1): a jump to 80 авт./ч is +167 % and would have been a
+    # 33-sigma "storm"; the 20-авт./ч floor says z = 2.5 and the hour stays quiet
+    filled = tight_july({"2024-07-11": {"level": 80.0, "hours": (0, 4)}})
+    assert detect.detect_traffic(filled, {SECTION: SID}) == []
+
+
+def test_practical_floor_silences_small_absolute_drops():
+    # 1000 down to 660 авт./ч passes the floored z (|z| = 3.4) but the absolute car
+    # count stays under max(35 % of norm, 50): a third of a hundred cars at daytime
+    # is not an incident, and dilczech's practical AND keeps it unreported
+    filled = tight_july({"2024-07-11": {"level": 660.0, "hours": (8, 12)}})
+    assert detect.detect_traffic(filled, {SECTION: SID}) == []
+    # and the same day truly halved: everything passes and it is told
+    fired = tight_july({"2024-07-11": {"level": 400.0, "hours": (8, 12)}})
+    hourly = [
+        a
+        for a in detect.detect_traffic(fired, {SECTION: SID})
+        if a["detector"] == "amplitude" and a["metric"] == "volume" and a["type"] == "volume_drop"
+    ]
+    assert len(hourly) == 1 and hourly[0]["deviation_pct"] == pytest.approx(-60.0, abs=0.5)
+
+
+def test_speed_drop_is_measured_in_km_h_and_needs_moving_cars():
+    fired = july_fill({"2024-07-11": {"speed_direct": 55.0, "hours": (8, 12)}})
+    found = detect.detect_traffic(fired, {SECTION: SID})
+    slow = [a for a in found if a["type"] == "speed_drop"]
+    assert len(slow) == 1 and slow[0]["metric"] == "speed_direct"
+    assert slow[0]["starts_at"] == "2024-07-11T08:00:00+03:00"
+    assert slow[0]["ends_at"] == "2024-07-11T12:00:00+03:00"
+    assert slow[0]["expected"] - slow[0]["actual"] >= 15.0  # the gap is in км/ч
+    assert "км/ч" in slow[0]["description"]
+
+    mild = july_fill({"2024-07-11": {"speed_direct": 75.0, "hours": (8, 14)}})
+    assert [
+        a for a in detect.detect_traffic(mild, {SECTION: SID}) if a["type"] == "speed_drop"
+    ] == []
+
+    masked = july_fill({"2024-07-11": {"speed_direct": 55.0, "hours": (8, 13)}}).copy()
+    at_noon = masked["ts"].dt.strftime("%Y-%m-%dT%H") == "2024-07-11T10"
+    masked.loc[at_noon, "volume_direct"] = 0.0  # the loop read no car in that hour
+    for item in detect.detect_traffic(masked, {SECTION: SID}):
+        if item["type"] == "speed_drop" and item["metric"] == "speed_direct":
+            assert not item["starts_at"] <= "2024-07-11T10:00:00+03:00" < item["ends_at"]
+
+
+def test_regime_change_fires_once_for_a_sustained_shift():
+    # Jan 2024 is the frozen history, Feb 4-11 (8 flat-shifted days) the new regime:
+    # every day reads 60 % of its kind's historical median for 7 days straight
+    specs = []
+    for day in pd.date_range("2024-01-01", "2024-04-30", freq="D"):
+        shift = pd.Timestamp("2024-02-04") <= day <= pd.Timestamp("2024-02-11")
+        level = 600.0 if shift else 1000.0
+        for h in range(24):
+            specs.append(
+                (
+                    (day + pd.Timedelta(hours=h)).isoformat(),
+                    {"volume": level + (1.0 if h % 2 else -1.0)},
+                )
+            )
+    found = detect.detect_traffic(filled_frame(specs), {SECTION: SID})
+    regime = [a for a in found if a["detector"] == "regime"]
+    assert len(regime) == 1  # one report per window: the overlapping windows are eaten
+    item = regime[0]
+    assert item["type"] == "volume_drop"
+    assert item["starts_at"] == "2024-02-04T00:00:00+03:00"
+    assert item["ends_at"] == "2024-02-11T00:00:00+03:00"  # half-open, first day to day 8
+    assert item["deviation_pct"] == pytest.approx(-40.0, abs=1.0)
+    assert item["score"] == pytest.approx(5.0, abs=0.2)  # 3.5 + 0.1 per % past 25
+    assert item["level"] == "critical"
+
+    # a one-day storm inside an otherwise flat spell is an amplitude story, not a regime
+    specs = []
+    for day in pd.date_range("2024-03-01", "2024-03-31", freq="D"):
+        level = 450.0 if day.day == 13 else 500.0  # one Sunday 10 % under the Sundays
+        for h in range(24):
+            specs.append(
+                (
+                    (day + pd.Timedelta(hours=h)).isoformat(),
+                    {"volume": level + (1.0 if h % 2 else -1.0)},
+                )
+            )
+    found = detect.detect_traffic(filled_frame(specs), {SECTION: SID})
+    assert [a for a in found if a["detector"] == "regime"] == []
+
+
+def test_correlation_promotion_bumps_each_side_once_and_caps():
+    ts = pd.Timestamp("2024-07-10T08:00", tz=parse.MSK)
+
+    def item(metric, type_, start, hours, score, text):
+        return detect.anomaly(
+            SID,
+            start,
+            start + pd.Timedelta(hours=hours),
+            "traffic",
+            type_,
+            "amplitude",
+            detect.level_from_score(score),
+            metric,
+            1.0,
+            2.0,
+            -50.0,
+            score,
+            text,
+        )
+
+    vol = item("volume", "volume_drop", ts, 4, 1.5, "Поток упал.")
+    spd = item("speed_direct", "speed_drop", ts + pd.Timedelta(hours=1), 2, 3.4, "Скорость упала.")
+    loud = item("volume", "volume_drop", ts + pd.Timedelta(hours=2), 2, 8.0, "Громкая.")
+    far = item("speed_direct", "speed_drop", ts + pd.Timedelta(days=1), 2, 4.0, "Далекая.")
+    items = [vol, spd, loud, far]
+    detect.promote_correlated(items)
+    detect.promote_correlated(items)  # the second pass must find nothing new to give
+
+    assert vol["score"] == 2.0 and vol["level"] == "medium"  # 1.5 + 0.5 crosses the band
+    assert spd["score"] == 3.9 and spd["level"] == "high"
+    assert vol["description"].count("вторым каналом") == 1  # once, never twice
+    assert spd["description"].count("вторым каналом") == 1
+    assert "скорость" in vol["description"] and "поток" in spd["description"]
+    assert loud["score"] == 8.0 and loud["description"] == "Громкая."  # at/above the cap
+    assert far["score"] == 4.0 and far["description"] == "Далекая."  # no time overlap
+
+
+def test_zero_telemetry_run_is_a_technical_failure():
+    rows = day_rows("2024-03-04", volume=300.0)
+    for h in range(24):  # a whole day of reported-but-empty packets
+        stamp = pd.Timestamp("2024-03-05", tz=parse.MSK) + pd.Timedelta(hours=h)
+        row = raw_row(stamp, 0.0, speed=0.0, load=0.0)
+        row[13], row[15] = 0.0, 0.0  # the reverse speed and load channels too
+        rows.append(row)
+    found, bad_hours = quality.detect_failures(make_table(rows), SENSOR_IDS)
+    telemetry = [a for a in found if a["type"] == "zero_telemetry"]
+    assert len(telemetry) == 1
+    assert telemetry[0]["category"] == "technical"
+    assert telemetry[0]["starts_at"] == "2024-03-05T00:00:00+03:00"
+    assert telemetry[0]["ends_at"] == "2024-03-06T00:00:00+03:00"
+    assert telemetry[0]["level"] == "high"
+    assert len(bad_hours[SID]) == 24  # no traffic detector may read these as an empty road
+
+    rows = day_rows("2024-03-06", volume=300.0)
+    for h in range(9, 15):  # six quiet but real hours: short, so not telemetry death
+        stamp = pd.Timestamp("2024-03-06", tz=parse.MSK) + pd.Timedelta(hours=h)
+        row = raw_row(stamp, 0.0, speed=0.0, load=0.0)
+        row[13], row[15] = 0.0, 0.0
+        rows[h - 9] = row
+    found, bad_hours = quality.detect_failures(make_table(rows), SENSOR_IDS)
+    assert [a for a in found if a["type"] == "zero_telemetry"] == []
+    assert len(bad_hours.get(SID, ())) == 0
+
+
+def test_month_yoy_compares_only_valid_months_on_flow_weighted_speed():
+    # 2024-07's month speed is the flow-weighted 68 км/ч ((70*900 + 50*100)/1000),
+    # not the plain 60 км/ч the bare mean used to say; and 2025-07, a fifth of which
+    # is imputed (84 % valid - over the complaint bar, under the YoY bar), may
+    # neither compare itself nor anchor 2024-07's norm with its matching 68 км/ч
+    specs = []
+    for year in (2023, 2024, 2025):
+        for day in range(1, 32):
+            key = f"{year}-07-{day:02d}"
+            for h in range(24):
+                values = {"volume": 1000.0, "speed_direct": 85.0}
+                if year == 2024:
+                    values.update(
+                        {
+                            "speed_direct": 70.0 if h < 12 else 50.0,
+                            "volume_direct": 900.0 if h < 12 else 100.0,
+                        }
+                    )
+                if year == 2025:
+                    values["speed_direct"] = 68.0
+                    if day <= 5:
+                        values["imputation_method"] = "profile"
+                specs.append((f"{key}T{h:02d}:00", values))
+    found = detect.detect_monthly(filled_frame(specs), {SECTION: SID})
+    assert len(found) == 1  # the 84 %-valid 2025 July is silently outside all YoY
+    year = found[0]
+    assert year["detector"] == "yoy" and year["metric"] == "speed_direct"
+    assert year["type"] == "speed_drop"
+    assert year["starts_at"].startswith("2024-07-01")
+    assert year["actual"] == pytest.approx(68.0)  # flow-weighted, not the plain 60
+    assert year["expected"] == pytest.approx(85.0)  # the 2025 outlier month is no peer

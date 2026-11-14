@@ -5,7 +5,8 @@ Two steps, both before the traffic detectors run:
 `detect_failures` reads the raw parsed table and reports what the sensor did not really
 measure, as `technical` anomalies: days with fewer than 24 hours (an incomplete export
 day or a whole lost day), a stuck sensor (the same volume > 10 авт./ч for at least 5
-consecutive hours), zero speed while cars are counted, and one direction of the tube dead
+consecutive hours), zero speed while cars are counted, a dead reporter (every channel
+reading zero for at least 12 consecutive hours), and one direction of the tube dead
 (its count missing or starved to nothing while the other direction is busy - then the
 hour's total counts one loop instead of two and must not be trusted either). It also
 returns the set of hours no one should trust.
@@ -33,6 +34,18 @@ DEAD_DIR_ACTIVE_OTHER = 200  # the other direction must read this busy before a 
 DEAD_DIR_STARVE_SHARE = 0.05  # a side under 5 % of the hour's total while the other is busy: dead
 ZERO_SPEED_KMH = 1.0  # speed at or below this while cars pass: the speed channel died
 ZERO_SPEED_MIN_ANOMALY_HOURS = 2  # single-hour dropouts are repaired by imputation, not reported
+ZERO_TEL_MIN_HOURS = 12  # hours of all-zero channels that pass for a dead reporter
+# the seven channels of one reported hour; all zero at once is what a dead
+# reporter ships (dilczech's zero-packet check), not what an empty road logs
+TELEMETRY_CHANNELS = [
+    "volume",
+    "volume_direct",
+    "volume_reverse",
+    "speed_direct",
+    "speed_reverse",
+    "load_direct",
+    "load_reverse",
+]
 MAX_INTERPOLATE_HOURS = 3  # longer holes get the day-profile median instead
 MIN_PROFILE_SAMPLES = 3  # same-kind hours needed before a median is trusted
 
@@ -40,6 +53,8 @@ SCORE_INTEGRITY = 3.0  # fixed rule weights, positioned on the shared v1 scale
 SCORE_FLATLINE = 4.0
 SCORE_ZERO_SPEED = 2.5
 SCORE_DIRECTION = 2.8
+SCORE_ZERO_TELEMETRY = 3.5  # louder than a partial lost day (3.0), quieter than a
+# stuck sensor inventing plausible numbers (4.0): the hours are zeros nobody can read
 
 NUMERIC = [
     "volume",
@@ -154,6 +169,39 @@ def detect_failures(df: pd.DataFrame, sensor_ids: dict[str, str]):
                     SCORE_ZERO_SPEED,
                     f"Скорость 0 км/ч при трафике {len(hours)} часов подряд: "
                     "датчик скорости не работает",
+                )
+            )
+
+        # All seven channels exactly zero for hours on end (dilczech's zero-packet
+        # suspicion): a road can go quiet in a storm, but it does not log a perfectly
+        # round zero on every channel, every direction, for half a day at a time -
+        # that is the reporter itself sending emptiness. From ZERO_TEL_MIN_HOURS in a
+        # row the run is reported, and every such hour is untrusted either way: no
+        # traffic detector may read a dead reporter as an empty road.
+        packet_zero = sec_df["ts"].notna()
+        for column in TELEMETRY_CHANNELS:
+            packet_zero &= sec_df[column].fillna(-1.0).eq(0.0)
+        for start, end in _consecutive_runs(sec_df["ts"], packet_zero):
+            hours = pd.date_range(start, end, freq="h", inclusive="left")
+            if len(hours) < ZERO_TEL_MIN_HOURS:
+                continue
+            bad_hours.setdefault(sensor_id, set()).update(hours)
+            found.append(
+                anomaly(
+                    sensor_id,
+                    start,
+                    end,
+                    "technical",
+                    "zero_telemetry",
+                    "sensor",
+                    level_from_score(SCORE_ZERO_TELEMETRY),
+                    "volume",
+                    0.0,
+                    None,
+                    None,
+                    SCORE_ZERO_TELEMETRY,
+                    f"Все каналы читали ноль {len(hours)} часов подряд: "
+                    "телеметрия молчала, датчик ничего не измерил",
                 )
             )
 
