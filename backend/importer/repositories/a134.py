@@ -1,10 +1,9 @@
-"""Repository layer for data import operations."""
+"""Data access layer for A-134 import."""
 
 import libsql
 
 
 def create_tables(db: libsql.Connection) -> None:
-    """Создаёт таблицы, если они ещё не существуют."""
     db.execute("""
         CREATE TABLE IF NOT EXISTS sensors (
             id TEXT PRIMARY KEY, road TEXT NOT NULL, road_name TEXT NOT NULL,
@@ -36,10 +35,9 @@ def create_tables(db: libsql.Connection) -> None:
 
 
 def upsert_sensors(db: libsql.Connection, sensors: list[dict]) -> None:
-    """Добавляет или обновляет датчики."""
     for s in sensors:
         db.execute(
-            """INSERT OR REPLACE INTO sensors 
+            """INSERT OR REPLACE INTO sensors
                (id, road, road_name, name, km, lat, lon, directions_direct, directions_reverse)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
@@ -57,44 +55,42 @@ def upsert_sensors(db: libsql.Connection, sensors: list[dict]) -> None:
     db.commit()
 
 
-def upsert_series(db: libsql.Connection, series_rows: list[dict]) -> None:
-    """Добавляет или обновляет временные ряды."""
-    for row in series_rows:
+def upsert_series(db: libsql.Connection, rows: list[dict]) -> None:
+    for r in rows:
         db.execute(
-            """INSERT OR REPLACE INTO series 
+            """INSERT OR REPLACE INTO series
                (sensor_id, ts, volume, volume_direct, volume_reverse, cars, small_trucks,
                 medium_trucks, large_trucks, road_trains, buses, motorcycles,
                 speed_direct, speed_reverse, load_direct, load_reverse, state, imputation_method)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                row["sensor_id"],
-                row["ts"],
-                int(row["volume"]),
-                int(row["volume_direct"]),
-                int(row["volume_reverse"]),
-                int(row["cars"]) if row["cars"] else None,
-                int(row["small_trucks"]) if row["small_trucks"] else None,
-                int(row["medium_trucks"]) if row["medium_trucks"] else None,
-                int(row["large_trucks"]) if row["large_trucks"] else None,
-                int(row["road_trains"]) if row["road_trains"] else None,
-                int(row["buses"]) if row["buses"] else None,
-                int(row["motorcycles"]) if row["motorcycles"] else None,
-                float(row["speed_direct"]) if row["speed_direct"] else None,
-                float(row["speed_reverse"]) if row["speed_reverse"] else None,
-                float(row["load_direct"]) if row["load_direct"] else None,
-                float(row["load_reverse"]) if row["load_reverse"] else None,
-                row["state"],
-                row["imputation_method"] if row["imputation_method"] else None,
+                r["sensor_id"],
+                r["ts"],
+                int(r["volume"]),
+                int(r["volume_direct"]),
+                int(r["volume_reverse"]),
+                int(r["cars"]) if r["cars"] else None,
+                int(r["small_trucks"]) if r["small_trucks"] else None,
+                int(r["medium_trucks"]) if r["medium_trucks"] else None,
+                int(r["large_trucks"]) if r["large_trucks"] else None,
+                int(r["road_trains"]) if r["road_trains"] else None,
+                int(r["buses"]) if r["buses"] else None,
+                int(r["motorcycles"]) if r["motorcycles"] else None,
+                float(r["speed_direct"]) if r["speed_direct"] else None,
+                float(r["speed_reverse"]) if r["speed_reverse"] else None,
+                float(r["load_direct"]) if r["load_direct"] else None,
+                float(r["load_reverse"]) if r["load_reverse"] else None,
+                r["state"],
+                r["imputation_method"] if r["imputation_method"] else None,
             ),
         )
     db.commit()
 
 
 def upsert_anomalies(db: libsql.Connection, anomalies: list[dict]) -> None:
-    """Добавляет или обновляет аномалии."""
     for a in anomalies:
         db.execute(
-            """INSERT OR REPLACE INTO anomalies 
+            """INSERT OR REPLACE INTO anomalies
                (id, sensor_id, starts_at, ends_at, category, type, detector, level,
                 metric, actual, expected, deviation_pct, score, is_mega, event_id, description)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",

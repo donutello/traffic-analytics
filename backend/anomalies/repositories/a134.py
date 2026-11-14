@@ -9,32 +9,23 @@ def get_anomalies(
     level: str | None = None,
     category: str | None = None,
 ) -> list[dict]:
-    """Получает аномалии для трассы А-134 с опциональной фильтрацией."""
-    query = """
-        SELECT id, sensor_id, starts_at, ends_at, category, type, detector,
-               level, metric, actual, expected, deviation_pct, score,
-               is_mega, event_id, description
-        FROM anomalies
-        WHERE id LIKE 'a134-%'
-    """
+    query = (
+        "SELECT id, sensor_id, starts_at, ends_at, category, type, "
+        "detector, level, metric, actual, expected, deviation_pct, "
+        "score, is_mega, event_id, description "
+        "FROM anomalies WHERE id LIKE 'a134-%'"
+    )
     params: list[str | float] = []
-
     if sensor_id:
         query += " AND sensor_id = ?"
         params.append(sensor_id)
-
     if level:
         query += " AND level = ?"
         params.append(level)
-
     if category:
         query += " AND category = ?"
         params.append(category)
-
     query += " ORDER BY starts_at DESC"
-
-    result = db.execute(query, params)
-    rows = result.fetchall()
 
     return [
         {
@@ -55,25 +46,21 @@ def get_anomalies(
             "event_id": row[14],
             "description": row[15],
         }
-        for row in rows
+        for row in db.execute(query, params).fetchall()
     ]
 
 
 def get_anomaly_by_id(db: libsql.Connection, anomaly_id: str) -> dict | None:
-    """Получает одну аномалию по ID."""
-    query = """
-        SELECT id, sensor_id, starts_at, ends_at, category, type, detector,
-               level, metric, actual, expected, deviation_pct, score,
-               is_mega, event_id, description
-        FROM anomalies
-        WHERE id = ? AND id LIKE 'a134-%'
-    """
-    result = db.execute(query, (anomaly_id,))
+    result = db.execute(
+        "SELECT id, sensor_id, starts_at, ends_at, category, type, "
+        "detector, level, metric, actual, expected, deviation_pct, "
+        "score, is_mega, event_id, description "
+        "FROM anomalies WHERE id = ? AND id LIKE 'a134-%'",
+        (anomaly_id,),
+    )
     row = result.fetchone()
-
     if not row:
         return None
-
     return {
         "id": row[0],
         "sensor_id": row[1],

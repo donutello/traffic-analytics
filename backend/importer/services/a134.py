@@ -1,19 +1,18 @@
-"""Business logic layer for data import."""
+"""Business logic layer for A-134 import."""
 
 import csv
 import json
 from pathlib import Path
 
 from backend.db import connect
-from backend.repositories.import_repository import (
+from backend.importer.repositories.a134 import (
     create_tables,
     upsert_anomalies,
     upsert_sensors,
     upsert_series,
 )
 
-# Путь к папке с данными (поднимаемся на 3 уровня вверх от services/ до корня проекта)
-DATA_DIR = Path(__file__).parent.parent.parent / "analysis" / "output" / "a134"
+DATA_DIR = Path(__file__).parent.parent.parent.parent / "analysis" / "output" / "a134"
 
 
 def _load_sensors() -> list[dict]:
@@ -23,7 +22,6 @@ def _load_sensors() -> list[dict]:
         return []
     with open(sensors_file, encoding="utf-8") as f:
         data = json.load(f)
-    # Добавляем информацию о трассе в каждый датчик для удобства репозитория
     for sensor in data["sensors"]:
         sensor["road"] = data["road"]
         sensor["road_name"] = data["road_name"]
@@ -49,7 +47,6 @@ def _load_anomalies() -> list[dict]:
 
 
 def run_import() -> None:
-    """Запускает полный процесс импорта данных для А-134."""
     print(f"Importing data from {DATA_DIR}")
     db = connect()
     try:
