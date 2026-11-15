@@ -84,3 +84,11 @@ export interface AnomalyItem {
 export interface EventItem { id: string; date: string; date_label: string; category: string; category_label: string; title: string; description: string | null; source_url: string }
 export interface AnomalyDetail extends AnomalyItem { event: EventItem | null }
 export interface SensorAnomalies { counts: { ours: number; corporate: number }; anomalies: AnomalyItem[] }
+
+/* /api/comparison (issue #13, FR4). The matching rule lives in the backend docs
+   (backend/comparison): same sensor, time intervals overlap; one finding may pair with many. */
+export interface ComparisonTotals { ours: number; corporate: number; both: number; only_ours: number; only_corporate: number }
+export interface ComparisonShares { ours_found_pct: number; corporate_found_pct: number }
+export interface ComparisonPair { ours: AnomalyItem; corporate: AnomalyItem }
+export interface RoadComparison { road: string; road_name: string; totals: ComparisonTotals; shares: ComparisonShares; both_found: ComparisonPair[]; only_ours: AnomalyItem[]; only_corporate: AnomalyItem[] }
+export interface ComparisonOut { roads: RoadComparison[]; totals: ComparisonTotals; shares: ComparisonShares }

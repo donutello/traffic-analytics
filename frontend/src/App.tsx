@@ -2,8 +2,8 @@ import { useCallback, useMemo, useState } from 'react'
 import AnomalyList, { CountChips } from './AnomalyList'
 import { get, urls } from './api'
 import Chart from './Chart'
+import Comparison from './Comparison'
 import MapSection, { MapStates } from './MapSection'
-import Placeholder from './Placeholder'
 import SidePanel from './SidePanel'
 import { EmptyState, ErrorState, Spinner } from './States'
 import Toolbar from './Toolbar'
@@ -86,6 +86,8 @@ export default function App() {
   }
   const openAnomaly = useCallback((id: string) => patch({ anomaly: id }), [patch])
   const closeAnomaly = useCallback(() => patch({ anomaly: '' }), [patch])
+  /** The comparison section's per-road cards: show one road without touching the period. */
+  const pickRoad = useCallback((code: string) => patch({ road: code, sensor: '', anomaly: '' }), [patch])
   /** A map marker click selects the sensor and opens its summary (sensor mode of the panel). */
   const pickSensor = useCallback((id: string) => patch({ sensor: id, anomaly: '' }), [patch])
   const drillDown = (fromTs: string, toTs: string) => {
@@ -231,7 +233,15 @@ export default function App() {
         </section>
       )}
 
-      {url.section === 'compare' && <Placeholder title="Сравнение алгоритмов" text="Где наш алгоритм и корпоративная система находят одно и то же, где расходятся и насколько новый подход лучше (FR4)." issue={13} />}
+      {url.section === 'compare' && (
+        <section className="board">
+          <Comparison road={url.road} from={from} to={to} skipRoad={SAMPLE_ROAD} onSelectAnomaly={openAnomaly} onSelectRoad={pickRoad} />
+          <aside className="card side">
+            <h3>Подробнее</h3>
+            {panel ?? <p className="muted small">Кликните по метке на шкале времени или по строке таблицы различий — здесь появятся подробности аномалии. Фильтр дороги и периода действует и на сравнение.</p>}
+          </aside>
+        </section>
+      )}
     </main>
   )
 }

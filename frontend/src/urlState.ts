@@ -52,8 +52,9 @@ export function parseState(search: string): UrlState {
   return s
 }
 
-/** Only the user's edits go into the URL; what equals a default is dropped, so links stay short. */
-function serialize(s: UrlState): string {
+/** Only the user's edits go into the URL; what equals a default is dropped, so links stay short.
+ *  Exported for the round-trip test (issue #15): parseState(serialize(s)) must keep a state. */
+export function serializeState(s: UrlState): string {
   const p = new URLSearchParams()
   if (s.road) p.set('road', s.road)
   if (s.sensor) p.set('sensor', s.sensor)
@@ -85,7 +86,7 @@ export function useUrlState(): [UrlState, (patch: Partial<UrlState>) => void] {
   // defaults (replace, not push: no back-button trap). After that a user edit differs
   // from the address bar and becomes a new history entry; a back/forward popstate does not.
   useEffect(() => {
-    const wanted = serialize(state)
+    const wanted = serializeState(state)
     if (window.location.search !== wanted) {
       const url = `${window.location.pathname}${wanted}`
       if (mounted.current) window.history.pushState(null, '', url)

@@ -19,6 +19,12 @@
   --lv-high: #dc2626;
   --lv-critical: #7f1d1d;
 
+  /* Comparison palette (issue #13): agreement reads green, the two sides keep the
+     ours-blue / corporate-amber split used by the legend and the timelines. */
+  --cmp-match: #16a34a;
+  --cmp-ours: #2563eb;
+  --cmp-corporate: #d97706;
+
   color-scheme: light;
 }
 
@@ -38,6 +44,10 @@
   --lv-medium: #fb923c;
   --lv-high: #f87171;
   --lv-critical: #fca5a5;
+
+  --cmp-match: #4ade80;
+  --cmp-ours: #60a5fa;
+  --cmp-corporate: #fbbf24;
 
   color-scheme: dark;
 }
@@ -61,6 +71,10 @@
     --lv-medium: #fb923c;
     --lv-high: #f87171;
     --lv-critical: #fca5a5;
+
+    --cmp-match: #4ade80;
+    --cmp-ours: #60a5fa;
+    --cmp-corporate: #fbbf24;
 
     color-scheme: dark;
   }
@@ -122,8 +136,11 @@ a {
 }
 
 /* Layout: NFR1 asks for 1200–1920px desktop widths. The track is 1140px so that a window at
-   exactly 1200px still fits cleanly with its scrollbar; below that the whole page scrolls sideways. */
+   exactly 1200px still fits cleanly with its scrollbar; below that the whole page scrolls sideways.
+   border-box matters here: without it the padding would add to the 1140 min-width (1204 total)
+   and force a sideways scroll at exactly 1200px (found in the issue #15 width check). */
 .app {
+  box-sizing: border-box;
   max-width: 1920px;
   min-width: 1140px;
   margin: 0 auto;
@@ -410,33 +427,274 @@ a {
   margin-top: var(--space-1);
 }
 
-/* Honest placeholders for the sections built in later issues (#12, #13). */
-.placeholder {
+/* The comparison section of issue #13 (FR4): stacked agreement bars, parallel timelines
+   and difference tables. One column of cards; the side panel (issues #12/#14) is its column two. */
+.cmp {
+  grid-column: 1;
+  min-width: 0;
   display: grid;
+  gap: var(--space-4);
+  align-content: start;
 }
 
-.placeholder .card {
+.cmp-legend {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin: var(--space-2) 0;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: var(--space-1);
+  vertical-align: -1px;
+}
+
+.sw-match {
+  background: var(--cmp-match);
+}
+.sw-ours {
+  background: var(--cmp-ours);
+}
+.sw-corporate {
+  background: var(--cmp-corporate);
+}
+
+.cmp-cards {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.cmp-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
   display: grid;
   gap: var(--space-2);
-  justify-items: start;
-  padding: var(--space-6);
-  border-style: dashed;
+  align-content: start;
 }
 
-.placeholder p {
+.cmp-card h4 {
   margin: 0;
-  max-width: 60ch;
+  font-size: 14px;
 }
 
-.wip {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-muted);
-  border: 1px solid var(--color-border);
+.cmp-road {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-normal);
+  font-size: inherit;
+  font-weight: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.cmp-bar {
+  display: flex;
+  height: 22px;
   border-radius: var(--radius-sm);
-  padding: 2px var(--space-2);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.cmp-seg {
+  display: grid;
+  place-items: center;
+  min-width: 2px;
+}
+
+.cmp-seg em {
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--color-surface);
+}
+
+.seg-match {
+  background: var(--cmp-match);
+}
+.seg-ours {
+  background: var(--cmp-ours);
+}
+.seg-corporate {
+  background: var(--cmp-corporate);
+}
+
+.cmp-shares {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.cmp-shares span {
+  cursor: help;
+}
+
+/* Two tick lanes over one time axis; connectors live in a normalized stretched SVG
+   with non-scaling strokes, so lines stay 1px at every width (NFR1). */
+.cmp-timeline {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.cmp-plot {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.cmp-rows {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  row-gap: var(--space-1);
+  padding: var(--space-3) var(--space-3) var(--space-1);
+}
+
+.cmp-ylabel {
+  font-size: 13px;
+  color: var(--color-muted);
+  align-self: center;
+}
+
+.cmp-lane {
+  position: relative;
+  height: 30px;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.cmp-lane:last-child {
+  border-bottom: none;
+}
+
+.cmp-tick {
+  position: absolute;
+  top: 4px;
+  width: 3px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.cmp-tick:hover {
+  outline: 2px solid var(--color-text);
+}
+
+.t-match {
+  background: var(--cmp-match);
+}
+.t-ours {
+  background: var(--cmp-ours);
+  top: 6px;
+  height: 18px;
+}
+.t-corporate {
+  background: var(--cmp-corporate);
+  top: 6px;
+  height: 18px;
+}
+
+.t-mega {
+  outline: 2px solid var(--color-mega);
+}
+
+/* The overlay maps its 0..100 box exactly onto the lane area of .cmp-rows: the plot column
+   starts after the 220px label column and the card padding; the rows sit between the paddings. */
+.cmp-links {
+  position: absolute;
+  top: var(--space-3);
+  bottom: var(--space-1);
+  left: calc(220px + var(--space-3));
+  right: var(--space-3);
+  pointer-events: none;
+}
+
+.cmp-links line {
+  stroke: var(--cmp-match);
+  stroke-opacity: 0.25;
+  stroke-width: 1;
+}
+
+.cmp-axis {
+  position: relative;
+  height: 18px;
+  margin-left: calc(220px + var(--space-3));
+  margin-right: var(--space-3);
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.cmp-axis span {
+  position: absolute;
+  white-space: nowrap;
+}
+
+.cmp-table-wrap {
+  overflow-x: auto;
+  margin-bottom: var(--space-3);
+}
+
+.cmp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cmp-table th {
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.cmp-table th button {
+  border: none;
+  background: none;
+  padding: var(--space-1) var(--space-3) var(--space-1) 0;
+  font-weight: 600;
+  color: inherit;
+}
+
+.cmp-table th button:hover {
+  border-color: transparent;
+  color: var(--color-normal);
+}
+
+.cmp-table th:not(:has(button)) {
+  padding: var(--space-1) var(--space-3) var(--space-1) 0;
+}
+
+.cmp-table td {
+  padding: var(--space-1) var(--space-3) var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.cmp-table td .dot {
+  display: inline-block;
+  vertical-align: -1px;
+  margin-right: 4px;
+}
+
+.cmp-table tbody tr {
+  cursor: pointer;
+}
+
+.cmp-table tbody tr:hover,
+.cmp-table tbody tr:focus-visible {
+  background: var(--color-bg);
+  outline: none;
 }
 
 /* The map of issue #12 (docs/adr/0008): Leaflet fills a rounded card; offline (NFR of the

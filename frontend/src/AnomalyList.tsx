@@ -3,7 +3,7 @@ import { daysAgo, LEVEL_CLASSES, type SensorAnomalies } from './types'
 export function CountChips({ counts }: { counts: SensorAnomalies['counts'] }) {
   return (
     <p className="counts">
-      нашли мы: <b>{counts.ours}</b> · корпоративная система: <b>{counts.corporate}</b>
+      наш алгоритм: <b>{counts.ours}</b> · корпоративная система: <b>{counts.corporate}</b>
     </p>
   )
 }
@@ -23,7 +23,9 @@ export default function AnomalyList({ data, onSelect }: { data: SensorAnomalies;
             </span>
             <span className="a-meta">
               {a.is_mega && <span className="mega">МЕГА</span>}
-              <span className="muted">{a.source === 'ours' ? 'мы' : 'корп.'}</span>
+              <span className="muted" title={a.source === 'ours' ? 'наш алгоритм' : 'корпоративная система'}>
+                {a.source === 'ours' ? 'наш' : 'корп.'}
+              </span>
               <span className="muted">{daysAgo(a.days_ago)}</span>
             </span>
           </button>
