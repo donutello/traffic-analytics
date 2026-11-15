@@ -51,7 +51,7 @@ site push 50549 $D
 site take 50549 -- sh -c 'export PYTHONPATH=site-packages; P=$(readlink -f $(command -v python3)); $P -m backend.load && exec $P -m uvicorn backend.main:app --host 0.0.0.0 --port "$PORT"'
 ```
 
-`push` + `take` replace the running unit in place; <http://leasewi.com:50549> answers seconds later (HTTP only, no auth — anyone with the address sees it). `site ssh journalctl --user -u web-50549 -n 30` shows the app log if it does not. The database is built on the container from `analysis/output/` on every start, exactly like the demo run; raw data never travels.
+Always do BOTH commands. `push` is an rsync with delete and wipes `traffic.db` (the database `take` builds at startup), and it does not restart the running unit: after a push alone the app keeps answering from its response cache, while anything uncached hits an empty database and fails with 500 «no such table». `take` reruns the import and replaces the unit in place, so <http://leasewi.com:50549> answers seconds later (HTTP only, no auth — anyone with the address sees it). `site ssh journalctl --user -u web-50549 -n 30` shows the app log if it does not. The database is built on the container from `analysis/output/` on every start, exactly like the demo run; raw data never travels.
 
 ## Production on a VPS
 
