@@ -2,12 +2,13 @@ import json
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from backend.common import cache
 from backend.db import connect, get_db
 from backend.load import main as load
-from backend.main import app
+from backend.main import app, mount_spa
 
 MOCK = Path(__file__).resolve().parent.parent / "frontend" / "public" / "mock"
 FULL_PERIOD = "from=2025-03-07&to=2025-03-09"  # everything the _example set contains
@@ -352,3 +353,32 @@ def test_comparison_unknown_road_is_empty(client):
         "totals": totals(),
         "shares": {"ours_found_pct": 0.0, "corporate_found_pct": 0.0},
     }
+
+
+# ---------------------------------------------------------------- static SPA (issue #9)
+
+
+def spa_client(tmp_path):
+    """A fresh app with only the static mount, over a temporary dist: no npm build."""
+    (tmp_path / "index.html").write_text("<html>spa index</html>", "utf-8")
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "app.js").write_text("console.log(1)", "utf-8")
+    spa = FastAPI()
+
+    @spa.get("/api/ping")
+    def ping():
+        return {"pong": True}
+
+    mount_spa(spa, tmp_path)  # after the router, as in backend/main.py
+    return TestClient(spa)
+
+
+def test_static_mount_serves_the_spa_and_its_deep_links(tmp_path):
+    """index.html at /, real files as themselves, any other page path falls back to
+    index.html so deep links work, /api stays with the API (ADR 0002, issue #9)."""
+    client = spa_client(tmp_path)
+    assert client.get("/").text == "<html>spa index</html>"
+    assert client.get("/assets/app.js").text == "console.log(1)"
+    assert client.get("/some/spa/path").text == "<html>spa index</html>"
+    assert client.get("/api/ping").json() == {"pong": True}
+    assert client.get("/api/nothing").status_code == 404

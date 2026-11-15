@@ -11,7 +11,12 @@ analysis/output/_example; the UI was built against them. How each endpoint is bu
 from the contract tables: docs/contract.md, chapter "What the API builds from these files".
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
+from starlette.staticfiles import StaticFiles
 
 from backend.anomalies.controllers import router as anomalies_router
 from backend.common.cache import ResponseCacheMiddleware
@@ -33,3 +38,37 @@ app.include_router(comparison_router)
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# The built single-page app, served by the same process as the API (docs/adr/0002):
+# one server, one address, no CORS. frontend/dist only exists after `npm run build`,
+# so development runs without it keep using the Vite dev server as before.
+
+DIST_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+
+
+def _is_api(path: str) -> bool:
+    norm = path.strip("/")
+    return norm == "api" or norm.startswith("api/")
+
+
+class SpaStaticFiles(StaticFiles):
+    """Static files of the built SPA: an unknown path that is not under /api is a deep
+    link of the single page, so it gets index.html; /api paths keep the plain 404."""
+
+    async def get_response(self, path: str, scope) -> Response:
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code != 404 or _is_api(path):
+                raise
+            return await super().get_response("index.html", scope)
+
+
+def mount_spa(app: FastAPI, dist_dir: Path) -> None:
+    """Serve the built frontend at /; add after the /api routers, which then win (ADR 0002)."""
+    app.mount("/", SpaStaticFiles(directory=dist_dir, html=True), name="spa")
+
+
+if DIST_DIR.is_dir():
+    mount_spa(app, DIST_DIR)
