@@ -144,7 +144,7 @@ export default function App() {
       </nav>
 
       {url.section === 'overview' && (
-        <section className="board">
+        <section className="board board-fill">
           {sensors.error && (
             <div className="card chart-card">
               <ErrorState message={sensors.error} />
@@ -205,7 +205,7 @@ export default function App() {
       )}
 
       {url.section === 'map' && (
-        <section className="board">
+        <section className="board board-fill">
           <div className="card map-card">
             <h3>Карта аномалий</h3>
             <MapStates error={sensors.error} loading={!sensors.data && !sensors.error} empty={!!sensors.data && features.length === 0} />
