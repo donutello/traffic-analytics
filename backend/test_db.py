@@ -38,6 +38,34 @@ def test_ensure_schema_creates_every_table(db):
     assert ("idx_anomalies_sensor_starts",) in db.execute(
         "SELECT name FROM sqlite_master WHERE type = 'index'"
     ).fetchall()
+    # the two indexes of the load test (issue #8, docs/load-test.md) must be created too
+    names = {row[0] for row in db.execute("SELECT name FROM sqlite_master").fetchall()}
+    assert {
+        "idx_anomalies_sensor_source_starts_ends",
+        "idx_measurements_ts",
+    } <= names
+
+
+def test_the_load_test_queries_use_the_new_indexes(db):
+    """EXPLAIN QUERY PLAN must pick the new indexes: a plan that stopped using them is slow."""
+    ensure_schema(db)
+    series_plan = " ".join(
+        str(row[-1])
+        for row in db.execute(
+            "EXPLAIN QUERY PLAN SELECT EXISTS (SELECT 1 FROM anomalies a"
+            " WHERE a.source = 'ours' AND a.sensor_id = 'x'"
+            " AND a.starts_at <= datetime('2025-03-08 11:00:00', '+1 hour')"
+            " AND a.ends_at >= '2025-03-08 11:00:00')"
+        ).fetchall()
+    )
+    bounds_plan = " ".join(
+        str(row[-1])
+        for row in db.execute(
+            "EXPLAIN QUERY PLAN SELECT date(MAX(ts)) FROM measurements"
+        ).fetchall()
+    )
+    assert "USING COVERING INDEX idx_anomalies_sensor_source_starts_ends" in series_plan
+    assert "USING COVERING INDEX idx_measurements_ts" in bounds_plan
 
 
 def test_ensure_schema_is_idempotent(db):

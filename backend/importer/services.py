@@ -8,6 +8,7 @@ from pathlib import Path
 
 import libsql
 
+from backend.common.cache import clear as clear_response_cache
 from backend.common.periods import MOSCOW_TZ, TIME_FORMAT
 from backend.db import connect, ensure_schema
 from backend.importer import repositories
@@ -167,4 +168,5 @@ def main(argv: list[str], db: libsql.Connection | None = None) -> int:
     finally:
         if own_db:
             db.close()
+    clear_response_cache()  # the answers above changed, the cache may not keep old ones
     return 1 if failed else 0

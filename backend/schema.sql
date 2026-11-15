@@ -92,3 +92,19 @@ CREATE TABLE IF NOT EXISTS anomalies (
 -- against corporate per sensor, and /api/series marks the hours of a sensor that a
 -- traffic anomaly covers: all of them walk one sensor's anomalies in starts_at order.
 CREATE INDEX IF NOT EXISTS idx_anomalies_sensor_starts ON anomalies (sensor_id, starts_at);
+
+-- The anomaly check of /api/series runs once per measurement hour (EXISTS in
+-- backend/series/repositories.py): starts_at <= hour end AND ends_at >= hour start for
+-- source 'ours' of one sensor. idx_anomalies_sensor_starts makes it fetch the source and
+-- ends_at from the table row for every anomaly walked before the hour; this plain
+-- (sensor_id, source, starts_at, ends_at) index answers the whole check from the index.
+-- An existing database picks it up on the next run of backend.db or of the import.
+CREATE INDEX IF NOT EXISTS idx_anomalies_sensor_source_starts_ends
+    ON anomalies (sensor_id, source, starts_at, ends_at);
+
+-- The /api/meta period and, through it, every /api/anomalies and /api/comparison answer
+-- read the period bounds (MIN and MAX of the stored hours, backend/meta/repositories.py).
+-- The measurements key orders ts only inside one sensor, so MIN/MAX without a sensor
+-- condition would scan all 158k rows; with this plain ts index each is one index seek.
+-- An existing database picks it up on the next run of backend.db or of the import.
+CREATE INDEX IF NOT EXISTS idx_measurements_ts ON measurements (ts);
