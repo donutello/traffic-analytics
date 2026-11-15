@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.common import cache
 from backend.db import connect, get_db
 from backend.load import main as load
 from backend.main import app
@@ -35,6 +36,7 @@ def db(tmp_path):
 
 @pytest.fixture
 def client(db):
+    cache.clear()  # every test reads its own fresh database, no answers from the last one
     app.dependency_overrides[get_db] = lambda: db
     yield TestClient(app)
     app.dependency_overrides.clear()

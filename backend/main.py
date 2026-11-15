@@ -14,12 +14,14 @@ from the contract tables: docs/contract.md, chapter "What the API builds from th
 from fastapi import FastAPI
 
 from backend.anomalies.controllers import router as anomalies_router
+from backend.common.cache import ResponseCacheMiddleware
 from backend.comparison.controllers import router as comparison_router
 from backend.meta.controllers import router as meta_router
 from backend.sensors.controllers import router as sensors_router
 from backend.series.controllers import router as series_router
 
 app = FastAPI(title="Traffic Analytics")
+app.add_middleware(ResponseCacheMiddleware)
 
 app.include_router(meta_router)
 app.include_router(series_router)
