@@ -23,12 +23,18 @@ export default function Toolbar({ state, roads, road, sensor, features, typeLabe
   const zoomed = state.from !== '' || state.to !== '' || state.granularity !== 'week'
   // options of open-ended detector codes: what the window has, plus the shared ?type= even if absent
   const typeCodes = [...new Set([...Object.keys(typeLabels), ...(state.type ? [state.type] : [])])]
+  // Only the comparison section knows the "every road" view (issue #13); elsewhere an empty road resolves to the first one.
+  const compareAll = state.section === 'compare'
 
   return (
     <div className="card toolbar" role="group" aria-label="Фильтры">
       <label className="tb-field">
         <span>Дорога</span>
-        <select value={road} onChange={(e) => onPatch({ road: e.target.value, sensor: '', anomaly: '', from: '', to: '', granularity: 'week' })}>
+        <select
+          value={compareAll ? state.road || '*' : road}
+          onChange={(e) => onPatch({ road: e.target.value === '*' ? '' : e.target.value, sensor: '', anomaly: '', from: '', to: '', granularity: 'week' })}
+        >
+          {compareAll && <option value="*">все дороги</option>}
           {roads.map((r) => (
             <option key={r.code} value={r.code}>
               {r.name}

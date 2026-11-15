@@ -13,6 +13,15 @@ export const urls = {
   series: (sensor: string, from: string, to: string, granularity: string) => `/api/series?sensor=${sensor}&from=${from}&to=${to}&granularity=${granularity}`,
   anomalies: (road: string, from: string, to: string) => `/api/anomalies?road=${road}&from=${from}&to=${to}`,
   anomaly: (id: string) => `/api/anomalies/${id}`,
+  /** No road param means the comparison covers every road (issue #13). */
+  comparison: (road: string, from: string, to: string) => {
+    const p = new URLSearchParams()
+    if (road) p.set('road', road)
+    if (from) p.set('from', from)
+    if (to) p.set('to', to)
+    const q = p.toString()
+    return q ? `/api/comparison?${q}` : '/api/comparison'
+  },
 }
 
 const cache = new Map<string, Promise<unknown>>()
@@ -20,10 +29,16 @@ const cache = new Map<string, Promise<unknown>>()
 export function get<T>(url: string): Promise<T> {
   let pending = cache.get(url)
   if (!pending) {
-    pending = fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`${url}: ${r.status}`)
-      return r.json() as Promise<T>
-    })
+    pending = fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`${url}: ${r.status}`)
+        return r.json() as Promise<T>
+      })
+      // A failed answer must not poison the whole session (e.g. the backend restarting mid-use): drop it from the cache, a retry refetches.
+      .catch((e) => {
+        cache.delete(url)
+        throw e
+      })
     cache.set(url, pending)
   }
   return pending as Promise<T>

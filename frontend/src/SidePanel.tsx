@@ -69,10 +69,24 @@ function sensorLine(features: SensorFeature[] | undefined, roads: Road[], id: st
 
 function AnomalyView({ id, roads, features, onClose }: Props & { id: string }) {
   const { data, error } = useAsync(get<AnomalyDetail>(urls.anomaly(id)), [id])
+  // The API answers 404 for unknown ids; a shared link with a stale id deserves a friendly hint, not a raw error (issue #15).
+  const notFound = !!error && /: 404$/.test(error)
 
   return (
     <>
-      {error && <ErrorState message={error} />}
+      {notFound && (
+        <>
+          <div className="detail-head">
+            <h4>Аномалия не найдена</h4>
+            <Close onClose={onClose} />
+          </div>
+          <p className="muted small">
+            В ссылке указан номер, которого нет в базе — возможно, данные импортировали заново. Выберите дорогу и период на панели фильтров, затем откройте аномалию на графике, карте или в разделе
+            сравнения.
+          </p>
+        </>
+      )}
+      {error && !notFound && <ErrorState message={error} />}
       {!data && !error && <Spinner />}
       {data && (
         <>
