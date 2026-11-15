@@ -66,6 +66,10 @@ uv run python -m backend.load _example        # or just one road; _example works
 
 Loading a road replaces its old rows, so running it again changes nothing; a road whose files break the contract is reported and loads nothing.
 
+## Demo run
+
+To show the customer the finished dashboard the way it will run in production — one process, one address — build the frontend, load the committed results and start FastAPI: `uv sync`, `uv run python -m backend.load`, `npm ci && npm run build` in `frontend/`, `uv run uvicorn backend.main:app --port 8000`, then open http://localhost:8000. The full guide, including the VPS setup behind HTTPS: [docs/deploy.md](docs/deploy.md).
+
 ## Checks
 
 Run them before you open a pull request. GitHub Actions runs the same checks on every pull request, and a pull request can be merged only when they pass.
