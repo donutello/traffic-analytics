@@ -32,6 +32,27 @@ uv sync; uv run python -m backend.load; cd frontend; npm ci; npm run build; cd .
 
 The import replaces each road's rows, so running it again (or the whole demo a second time) is harmless.
 
+## Preview on the temporary container (leasewi.com:50549)
+
+While there is no VPS yet, the dashboard is shown to the customer through a throwaway preview container ("summit", same host as the dev box). It has no network access from its app units (no DNS, no PyPI, no npm), so nothing can be installed there: the app is shipped as a self-contained directory from the dev box and runs with the container's own Python. The `site` tool does the transfer: `push` copies a directory to `~/www/<port>` and `take` runs a command there as a systemd unit. Three steps from the repository root after each merge to `main` you want visible:
+
+```sh
+# 1. build the frontend locally
+(cd frontend && npm run build)
+# 2. assemble a self-contained app dir: backend code, results, dist, and the Python packages
+#    as a plain --target directory (same Python 3.13 linux x86_64 on both sides)
+D=$(mktemp -d)/app && mkdir -p $D/frontend $D/analysis
+cp -r backend contract $D/ && cp -r frontend/dist $D/frontend/ && cp -r analysis/output $D/analysis/
+cp pyproject.toml uv.lock $D/
+uv export --no-dev --no-hashes --frozen -o $D/requirements.txt
+uv pip install -q -r $D/requirements.txt --target $D/site-packages --python 3.13 --no-cache
+# 3. ship it and (re)take the port; load runs on every start and is idempotent
+site push 50549 $D
+site take 50549 -- sh -c 'export PYTHONPATH=site-packages; P=$(readlink -f $(command -v python3)); $P -m backend.load && exec $P -m uvicorn backend.main:app --host 0.0.0.0 --port "$PORT"'
+```
+
+`push` + `take` replace the running unit in place; <http://leasewi.com:50549> answers seconds later (HTTP only, no auth — anyone with the address sees it). `site ssh journalctl --user -u web-50549 -n 30` shows the app log if it does not. The database is built on the container from `analysis/output/` on every start, exactly like the demo run; raw data never travels.
+
 ## Production on a VPS
 
 On the server, the demo steps once, then keep two things running: the app as a service, and a small proxy in front with HTTPS.
